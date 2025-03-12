@@ -1,7 +1,32 @@
 <!DOCTYPE html><html lang="zh-TW"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
-    <meta charset="UTF-8">
+     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>可愛的占卜</title>
+    <title>貓貓專屬迷你占卜</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+     
+    <!-- 專用於Chrome的PWA支持 -->
+    <!-- 默認favicon（使用base64編碼的小PNG圖標） -->
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAEJQTFRFAFz/AV3/Al7/A1//BGD/BWH/Dl//D2D/EGD/SXz/Sn3/kK7/ka//z9f/0Nj/0dn/4uf/4+j/8vX/8/X/9fb//f3//v7/bIBJkQAAACZ0Uk5TAAECBQcNDxUfICQmJy0uNTo7PUBBTE5YXWNveYqTpqu1yM7c7fb95XPJAAAAt0lEQVR42q2TSQ6DMBAEG4JZbMj+/P8nUQAplsm4hLpstyVXOTbqbZYgtlnfk8iwi+QcuZAEsiF7PGCD7J2SJwxIguRNvkwEgkmU3JYkEUwSSw5sNB1MYqJkCaArmCTNDmw0XThJZpLlgXZy4Gvx7JLcPBtfEhBsKBIbPkFRtKBOFFf2q1ApIoCqaKPdLPr5dPFt4nnJtOFxzb7jdc1OwvOaXcnjP3DW4PTkd8cP8meAn+NTGADR/RXVyPYnZAAAAABJRU5ErkJggg==">
+    
+    <!-- Chrome/Android專用Web App Manifest (直接使用data URI) -->
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIuiyswSEKzYWzi6LKzYWwgNpPrDosrs+NUw6L+U5Y23mn4/lj6MiLAogICJzaG9ydF9uYW1lIjogIuiyswSEKzYWwgOnj+WPoyIsCiAgImRlc2NyaXB0aW9uIjogIua0u+WJjeWfteW+l+S+huiysyEiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzVENUNERSIsCiAgImdjbV9zZW5kZXJfaWQiOiAiIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiaHR0cHM6Ly9pLmltZ3VyLmNvbS91NFVkc0N5LmpwZWciLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL2pwZWciLAogICAgICAicHVycG9zZSI6ICJhbnkgbWFza2FibGUiCiAgICB9LAogICAgewogICAgICAic3JjIjogImh0dHBzOi8vaS5pbWd1ci5jb20vdTRVZHNDeS5qcGVnIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9qcGVnIiwKICAgICAgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIgogICAgfQogIF0KfQo=">
+    
+    <!-- Chrome Web App特定元數據 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="貓貓占卜">
+    
+    <!-- 為Chrome設置主題色 -->
+    <meta name="theme-color" content="#5D5CDE">
+    
+    <!-- iOS特有標籤 -->
+    <link rel="apple-touch-icon" href="https://i.imgur.com/u4UdsCy.jpeg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="貓貓占卜">
+    
+    <!-- 兼容舊版本浏覽器 -->
+    <link rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAEJQTFRFAFz/AV3/Al7/A1//BGD/BWH/Dl//D2D/EGD/SXz/Sn3/kK7/ka//z9f/0Nj/0dn/4uf/4+j/8vX/8/X/9fb//f3//v7/bIBJkQAAACZ0Uk5TAAECBQcNDxUfICQmJy0uNTo7PUBBTE5YXWNveYqTpqu1yM7c7fb95XPJAAAAt0lEQVR42q2TSQ6DMBAEG4JZbMj+/P8nUQAplsm4hLpstyVXOTbqbZYgtlnfk8iwi+QcuZAEsiF7PGCD7J2SJwxIguRNvkwEgkmU3JYkEUwSSw5sNB1MYqJkCaArmCTNDmw0XThJZpLlgXZy4Gvx7JLcPBtfEhBsKBIbPkFRtKBOFFf2q1ApIoCqaKPdLPr5dPFt4nnJtOFxzb7jdc1OwvOaXcnjP3DW4PTkd8cP8meAn+NTGADR/RXVyPYnZAAAAABJRU5ErkJggg==" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -330,63 +355,64 @@
 
         // 貓咪占卜結果列表
         const encouragements = [
-            "別擔心，魚乾總會有的。",
+            "別擔心，魚乾總會有的！",
             "窗外的鳥飛快，而你如此優雅地眺望。",
-            "舔舔自己的爪子，生活總會再亮晶晶起來。",
+            "舔舔自己的爪子，生活總會再亮晶晶起來！",
             "別害怕黑夜，你有最敏銳的眼睛和最柔軟的心。",
-            "今天翻倒了水碗，明天依然有清涼的水。",
+            "就算今天翻倒了水碗，明天依然有清涼的水。",
             "即使世界很大，你的小窩永遠是最溫暖的地方。",
-            "哪怕今天曬不到太陽，但太陽總在。",
-            "掉下來的毛髮讓你更輕盈！",
-            "你的每次蹭蹭，都成為別人溫暖的禮物。",
+            "哪怕今天曬不到太陽，但太陽總在！",
+            "誒！一起去吃甜品好不好！",
+            "你的每次蹭蹭，都是別人溫暖的禮物。",
             "每一次的跳躍，都更靠近星星。",
             "我喵故我在。",
-            "不是所有喵星人都迷路了，有些貓只是自由地散步。",
+            "路上的貓不都是迷路了，有些只是自由地散步。",
             "世界上最讓貓舒服的事，就是曬太陽與被愛。",
-            "一隻喵的價值，不在於牠抓了多少老鼠，而在於牠如何享受每一刻的生活。",
+            "一隻喵的價值，不在於牠抓了多少老鼠，而在於牠如何享受生活。",
             "別問貓咪能為你做什麼，問問你能為貓咪做什麼。",
-            "有些貓咪生來就是要躺在陽光下，而不是去追逐激光點。",
+            "貓咪生來就是要躺在陽光下，而不是去追逐激光點。",
             "抓不住的毛線球，總是最有趣的。",
             "給貓咪一個窗台，牠能看透整個宇宙。",
             "別人看見貓咪在睡覺，但牠的夢裡是廣闊的草原。",
             "沒有什麼比貓咪在陽光下打滾更接近天堂。",
-            "把貓咪和多士綁在一起就變成永動機。",
-            "貓咪無需解釋，因為牠的存在已經是最好的理由。",
-            "貓咪不會嫌魚乾多。",
-            "寧惹主人，不惹睡覺的貓。",
+            "把貓咪和多士綁在一起就變成永動機！（咦？）",
+            "貓咪無需解釋，因為牠的存在就是最好的理由。",
+            "貓咪不會嫌魚乾多！",
+            "不惹睡覺的貓！",
             "天上的飛鳥不為吃喝憂慮，貓咪也不為魚乾憂愁。",
-            "最乖巧的貓咪也曾推倒杯子。",
-            "沒有什麼是一隻貓咪不能克服的，如果有，那就兩隻貓咪一起克服。",
+            "嘿，最乖巧的貓咪也曾推倒杯子。",
+            "沒有什麼是一隻貓咪不能克服的，如果有，那就出動兩隻貓咪！",
             "三隻大橘貓，勝過一隻緬因貓。",
             "吾日三省喵身：跟豬豬說早安乎？吃飽乎？早睡乎？",
             "歲寒，然後知貓貓之胖胖也。",
             "不經一番寒徹骨，怎得感冒傷風咳。（咦？）",
-            "世上無難事，有就不做了。",
+            "世上無難事，有的話就不做了！",
             "明日復明日，明日何其多！今天先睡覺，萬事明日磨。",
             "風聲雨聲讀書聲，zzzzzzz",
             "龍床不如紙箱。",
+            "從前有一隻貓說：「喵~」",
             "台上一分鐘，台下六十秒。",
             "橘貓會舔光每個罐罐。",
             "塞翁失馬，跟貓咪沒有關係。",
             "主人不努力，貓貓徒傷悲。",
             "有智慧的貓貓不追求把手手放在上層。",
-            "我吸貓故我在。",
+            "深吸一口貓。",
             "成功屬於那些努力不懈的貓，因為它們總能跳到被禁止的桌子上。",
             "不要為打翻的牛奶哭泣，因為貓已經在舔了。",
             "人生苦短，及時養貓。",
             "愛一隻貓就要接受它半夜踩你的臉。",
-            "不要和貓爭沙發，因為你會輸，貓卻很開心。",
-            "上天關閉了一扇門，貓會幫你打開衣櫃。",
-            "時間會治癒一切，除了貓推倒的東西。",
+            "不要和貓爭沙發，因為你會輸，貓卻很開心！",
+            "上天關閉了一扇門，貓貓會幫你打開衣櫃！",
+            "時間會治癒一切，除了被貓貓推倒的東西。",
             "心有多大，貓的領地就有多大。",
             "貓就是在你趕文件時跳上鍵盤的傢伙。",
-            "貓永遠懷疑隔壁家的罐頭更好吃。",
+            "隔壁家的罐罐好像更好吃！",
             "己所不欲，貓照樣會做給你看！",
-            "貓貓所見略同，所有箱子都是牠們的。",
+            "貓貓所見略同----所有箱子都是牠們的。",
             "一個人可以被毀滅，但貓不會屈服----除了討要罐罐的時候。",
             "機會是留給……貓從不準備，它會直接跳上去！",
             "給貓一個紙箱，牠可以環遊世界。",
-            "你是最可愛。",
+            "你最可愛muah /////",
             "貓睡成一個可愛的小月亮，如此安穩。",
             "喵喵喵？喵！"
         ];
