@@ -1,14 +1,71 @@
 <!DOCTYPE html><html lang="zh-TW"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 標準網頁圖標 -->
-    <link rel="icon" href="https://i.imgur.com/u4UdsCy.jpeg" type="image/jpeg">
-    <!-- iOS 設備添加到主屏幕時的圖標 -->
-    <link rel="apple-touch-icon" href="https://i.imgur.com/u4UdsCy.jpeg">
-    <!-- PWA 應用清單 -->
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoi6LKz6LKz5bCI5bGs6L+U5Y235p+P5Y+jIiwic2hvcnRfbmFtZSI6IuiyswSEKzYWzi6LKzYWwgNpPrDosrs+NUw6L+U5Y23IiwiaWNvbnMiOlt7InNyYyI6Imh0dHBzOi8vaS5pbWd1ci5jb20vdTRVZHNDeS5qcGVnIiwic2l6ZXMiOiIxMDI0eDEwMjQiLCJ0eXBlIjoiaW1hZ2UvanBlZyJ9XX0=">
-    <meta name="theme-color" content="#5D5CDE">
     <title>貓貓專屬迷你占卜</title>
+    
+    <!-- 圖標全面解決方案 -->
+    <!-- 基本favicon -->
+    <link rel="icon" href="https://i.imgur.com/u4UdsCy.jpeg" type="image/jpeg">
+    <link rel="shortcut icon" href="https://i.imgur.com/u4UdsCy.jpeg" type="image/jpeg">
+    
+    <!-- iOS/iPadOS 圖標 -->
+    <link rel="apple-touch-icon" href="https://i.imgur.com/u4UdsCy.jpeg">
+    <link rel="apple-touch-icon-precomposed" href="https://i.imgur.com/u4UdsCy.jpeg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="貓貓占卜">
+    
+    <!-- Android 圖標 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="貓貓占卜">
+    <meta name="theme-color" content="#5D5CDE">
+    
+    <!-- 針對Microsoft Edge和IE -->
+    <meta name="msapplication-TileImage" content="https://i.imgur.com/u4UdsCy.jpeg">
+    <meta name="msapplication-TileColor" content="#5D5CDE">
+    
+    <!-- 內嵌網站清單 (Web App Manifest) -->
+    <script type="application/json" id="manifest-placeholder">
+    {
+      "name": "貓貓專屬迷你占卜",
+      "short_name": "貓貓占卜",
+      "description": "每日獲得來自貓咪的鼓勵",
+      "start_url": ".",
+      "display": "standalone",
+      "orientation": "portrait",
+      "background_color": "#ffffff",
+      "theme_color": "#5D5CDE",
+      "icons": [
+        {
+          "src": "https://i.imgur.com/u4UdsCy.jpeg",
+          "sizes": "192x192",
+          "type": "image/jpeg"
+        },
+        {
+          "src": "https://i.imgur.com/u4UdsCy.jpeg",
+          "sizes": "512x512",
+          "type": "image/jpeg"
+        }
+      ]
+    }
+    </script>
+    <script>
+      // 動態生成manifest並添加到頭部
+      window.addEventListener('DOMContentLoaded', () => {
+        try {
+          const manifestData = document.getElementById('manifest-placeholder').textContent;
+          const manifestBlob = new Blob([manifestData], {type: 'application/json'});
+          const manifestURL = URL.createObjectURL(manifestBlob);
+          
+          const manifestLink = document.createElement('link');
+          manifestLink.rel = 'manifest';
+          manifestLink.href = manifestURL;
+          document.head.appendChild(manifestLink);
+        } catch (e) {
+          console.error('無法生成manifest', e);
+        }
+      });
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
