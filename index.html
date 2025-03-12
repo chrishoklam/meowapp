@@ -55,24 +55,39 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            padding: 1rem;
         }
         
-        /* 根據不同屏幕高度設置縮放比例 */
+        /* 根據不同屏幕高度設置縮放比例 - 更精細的梯度 */
+        @media (max-height: 800px) {
+            :root {
+                --app-scale: 0.95;
+            }
+        }
+        
         @media (max-height: 700px) {
             :root {
-                --app-scale: 0.9;
+                --app-scale: 0.85;
             }
         }
         
         @media (max-height: 600px) {
             :root {
-                --app-scale: 0.8;
+                --app-scale: 0.75;
             }
         }
         
         @media (max-height: 500px) {
             :root {
-                --app-scale: 0.7;
+                --app-scale: 0.65;
+            }
+        }
+        
+        @media (max-height: 400px) {
+            :root {
+                --app-scale: 0.55;
             }
         }
         
@@ -187,7 +202,7 @@
         /* 結果容器 */
         .fortune-container {
             min-height: calc(80px * var(--app-scale));
-            max-height: calc(150px * var(--app-scale));
+            max-height: calc(120px * var(--app-scale));
             overflow-y: auto;
             border-radius: 8px;
             transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
@@ -217,7 +232,7 @@
         /* 頁腳 */
         .app-footer {
             font-size: calc(0.75rem * var(--app-scale));
-            margin-top: calc(0.9rem * var(--app-scale));
+            margin-top: calc(1rem * var(--app-scale));
         }
         
         /* 加載動畫容器 */
@@ -231,12 +246,12 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-between p-4 bg-white text-gray-800 transition-colors duration-300">
+<body class="min-h-screen flex flex-col items-center justify-center bg-white text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100">
     <div class="app-container w-full flex flex-col items-center justify-between">
         <header class="w-full max-w-xl text-center">
-            <h1 class="app-title font-bold text-primary">貓貓專屬迷你占卜</h1>
-            <div id="current-datetime" class="date-display font-medium text-gray-700"></div>
-            <div id="day-counter" class="day-display font-bold text-gray-700"></div>
+            <h1 class="app-title font-bold text-primary dark:text-primary-light">貓貓專屬迷你占卜</h1>
+            <div id="current-datetime" class="date-display font-medium text-gray-700 dark:text-gray-300"></div>
+            <div id="day-counter" class="day-display font-bold text-gray-700 dark:text-gray-300"></div>
         </header>
 
         <main class="flex-1 w-full max-w-xl flex flex-col items-center justify-center">
@@ -258,39 +273,69 @@
                     <div id="click-progress" class="click-progress">再點擊 5 次</div>
                 </div>
 
-                <div class="fortune-container w-full bg-white rounded-lg shadow-md text-center" id="fortune-box">
+                <div class="fortune-container w-full bg-white dark:bg-gray-800 dark:text-gray-100 rounded-lg shadow-md text-center" id="fortune-box">
                     <p class="fortune-text font-medium" id="fortune-text"></p>
                     <!-- 倒計時容器 -->
-                    <div id="countdown-container" class="countdown-container border-t border-gray-200 text-gray-600 hidden">
-                        <p id="countdown-text">還有 <span id="countdown-timer" class="font-bold text-primary">00:00:00</span> 可開始下一次預測</p>
+                    <div id="countdown-container" class="countdown-container border-t border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hidden">
+                        <p id="countdown-text">還有 <span id="countdown-timer" class="font-bold text-primary dark:text-primary-light">00:00:00</span> 可開始下一次預測</p>
                     </div>
                 </div>
             </div>
         </main>
 
-        <footer class="app-footer w-full max-w-xl text-center text-gray-500">
+        <footer class="app-footer w-full max-w-xl text-center text-gray-500 dark:text-gray-400">
             <p>輕觸圖片，獲得今日的特別鼓勵吧！</p>
         </footer>
     </div>
     
     <!-- 動態調整縮放比例的腳本 -->
     <script>
-        // 檢測視口高度並設置縮放比例
+        // 檢測視口高度並設置縮放比例，確保內容完全適應屏幕
         function updateScale() {
             const vh = window.innerHeight;
+            const appContainer = document.querySelector('.app-container');
+            const contentHeight = appContainer.scrollHeight;
+            
+            // 初始縮放值設為1
             let scale = 1;
             
-            if (vh < 700) scale = 0.9;
-            if (vh < 600) scale = 0.8;
-            if (vh < 500) scale = 0.7;
-            if (vh < 400) scale = 0.6;
+            // 如果內容高度大於視口高度，計算需要縮放的比例
+            if (contentHeight > vh) {
+                scale = vh / contentHeight;
+                // 給縮放值添加一個小的安全邊距
+                scale = scale * 0.98;
+            } else {
+                // 根據屏幕高度設置預設值
+                if (vh < 800) scale = 0.95;
+                if (vh < 700) scale = 0.85;
+                if (vh < 600) scale = 0.75;
+                if (vh < 500) scale = 0.65;
+                if (vh < 400) scale = 0.55;
+            }
             
+            // 限制最小縮放值
+            scale = Math.max(scale, 0.45);
+            
+            // 應用縮放值
             document.documentElement.style.setProperty('--app-scale', scale);
+            
+            console.log(`視窗高度: ${vh}px, 內容高度: ${contentHeight}px, 縮放比例: ${scale}`);
         }
         
         // 頁面載入和調整大小時更新縮放
         window.addEventListener('load', updateScale);
         window.addEventListener('resize', updateScale);
+        
+        // 在DOM變化時重新計算縮放 (使用MutationObserver)
+        const observer = new MutationObserver(updateScale);
+        observer.observe(document.body, { 
+            childList: true, 
+            subtree: true, 
+            attributes: true,
+            attributeFilter: ['class', 'style'] 
+        });
+        
+        // 立即更新一次縮放
         updateScale();
     </script>
 
