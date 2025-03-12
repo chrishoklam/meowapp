@@ -1,0 +1,673 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可愛的占卜</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-light': '#7a79e3'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --app-scale: 1;
+        }
+        
+        /* 整體容器設置為視口高度，避免滾動 */
+        .app-container {
+            min-height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 根據不同屏幕高度設置縮放比例 */
+        @media (max-height: 700px) {
+            :root {
+                --app-scale: 0.9;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            :root {
+                --app-scale: 0.8;
+            }
+        }
+        
+        @media (max-height: 500px) {
+            :root {
+                --app-scale: 0.7;
+            }
+        }
+        
+        /* 標題縮放 */
+        .app-title {
+            font-size: calc(1.875rem * var(--app-scale));
+            margin-bottom: calc(0.5rem * var(--app-scale));
+        }
+        
+        /* 日期和天數縮放 */
+        .date-display {
+            font-size: calc(0.875rem * var(--app-scale));
+            margin-top: calc(0.5rem * var(--app-scale));
+        }
+        
+        .day-display {
+            font-size: calc(1.25rem * var(--app-scale));
+            margin-top: calc(0.25rem * var(--app-scale));
+        }
+        
+        /* 圖片容器縮放 */
+        .image-container {
+            position: relative;
+            width: calc(100% * var(--app-scale));
+            max-width: calc(280px * var(--app-scale));
+            height: auto;
+            aspect-ratio: 1.14 / 1; /* 維持原始的寬高比例 */
+            margin: calc(-15px * var(--app-scale)) auto calc(40px * var(--app-scale)) auto; /* 更大的負值頂部間距以進一步減少與Day X的距離 */
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 響應式調整 */
+        @media (max-width: 640px) {
+            .image-container {
+                max-width: calc(250px * var(--app-scale));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .image-container {
+                max-width: calc(220px * var(--app-scale));
+            }
+        }
+        
+        /* 搖動動畫定義 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+            20%, 40%, 60%, 80% { transform: translateX(3px); }
+        }
+        
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
+        .image-container:hover {
+            transform: scale(1.03);
+        }
+        
+        .image-container:active {
+            transform: scale(0.98);
+        }
+        
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .main-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 確保圖片保持比例並完全顯示 */
+            border-radius: 12px;
+            position: absolute;
+            transition: opacity 0.3s ease;
+        }
+        
+        .initial-image, .clicked-image, .final-image {
+            opacity: 0;
+        }
+        
+        .image-active {
+            opacity: 1;
+        }
+        
+        /* 點擊計數提示 */
+        .click-progress {
+            position: absolute;
+            bottom: calc(-25px * var(--app-scale));
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-weight: bold;
+            color: #5D5CDE;
+            font-size: calc(18px * var(--app-scale)); /* 縮放字體大小 */
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .click-progress.show {
+            opacity: 1;
+        }
+        
+        /* 結果容器 */
+        .fortune-container {
+            min-height: calc(80px * var(--app-scale));
+            max-height: calc(150px * var(--app-scale));
+            overflow-y: auto;
+            border-radius: 8px;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            transform: translateY(10px);
+            opacity: 0;
+            padding: calc(1rem * var(--app-scale)) !important;
+        }
+        
+        .fortune-container.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        /* 結果文字 */
+        .fortune-text {
+            font-size: calc(1.1rem * var(--app-scale));
+            line-height: calc(1.5 * var(--app-scale));
+        }
+        
+        /* 倒計時容器 */
+        .countdown-container {
+            margin-top: calc(0.75rem * var(--app-scale));
+            padding-top: calc(0.75rem * var(--app-scale));
+            font-size: calc(0.875rem * var(--app-scale));
+        }
+        
+        /* 頁腳 */
+        .app-footer {
+            font-size: calc(0.75rem * var(--app-scale));
+            margin-top: calc(1rem * var(--app-scale));
+        }
+        
+        /* 加載動畫容器 */
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 bg-white text-gray-800 transition-colors duration-300">
+    <div class="app-container w-full flex flex-col items-center justify-between">
+        <header class="w-full max-w-xl text-center">
+            <h1 class="app-title font-bold text-primary">貓貓專屬迷你占卜</h1>
+            <div id="current-datetime" class="date-display font-medium text-gray-700"></div>
+            <div id="day-counter" class="day-display font-bold text-gray-700"></div>
+        </header>
+
+        <main class="flex-1 w-full max-w-xl flex flex-col items-center justify-center">
+            <div class="w-full flex flex-col items-center">
+                <div id="image-container" class="image-container">
+                    <!-- 圖片包裝器 -->
+                    <div class="image-wrapper">
+                        <img src="https://i.imgur.com/RdfIav1.png" alt="可愛的貓" id="initial-image" class="main-image initial-image image-active">
+                        <img src="https://i.imgur.com/Ff7QTIv.png" alt="可愛的貓點擊效果" id="clicked-image" class="main-image clicked-image">
+                        <img src="https://i.imgur.com/dgyoDVN.jpeg" alt="可愛的貓最終圖" id="final-image" class="main-image final-image">
+                    </div>
+                    
+                    <!-- 加載動畫 -->
+                    <div id="loading" class="loading">
+                        <div class="w-8 h-8 border-3 border-primary-light border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    
+                    <!-- 點擊進度提示 -->
+                    <div id="click-progress" class="click-progress">再點擊 5 次</div>
+                </div>
+
+                <div class="fortune-container w-full bg-white rounded-lg shadow-md text-center" id="fortune-box">
+                    <p class="fortune-text font-medium" id="fortune-text"></p>
+                    <!-- 倒計時容器 -->
+                    <div id="countdown-container" class="countdown-container border-t border-gray-200 text-gray-600 hidden">
+                        <p id="countdown-text">還有 <span id="countdown-timer" class="font-bold text-primary">00:00:00</span> 可開始下一次預測</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer w-full max-w-xl text-center text-gray-500">
+            <p>輕觸圖片，獲得今日的特別鼓勵吧！</p>
+        </footer>
+    </div>
+    
+    <!-- 動態調整縮放比例的腳本 -->
+    <script>
+        // 檢測視口高度並設置縮放比例
+        function updateScale() {
+            const vh = window.innerHeight;
+            let scale = 1;
+            
+            if (vh < 700) scale = 0.9;
+            if (vh < 600) scale = 0.8;
+            if (vh < 500) scale = 0.7;
+            if (vh < 400) scale = 0.6;
+            
+            document.documentElement.style.setProperty('--app-scale', scale);
+        }
+        
+        // 頁面載入和調整大小時更新縮放
+        window.addEventListener('load', updateScale);
+        window.addEventListener('resize', updateScale);
+        updateScale();
+    </script>
+
+    <script>
+        // 檢測暗黑模式
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // 計算從2024年2月15日到今天的天數
+        function calculateDays() {
+            const startDate = new Date('2024-02-15');
+            const today = new Date();
+            
+            // 將兩個日期設置為當日的0時0分0秒，以便計算準確的日期差
+            startDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            
+            // 計算毫秒差異
+            const diffTime = Math.abs(today - startDate);
+            // 轉換為天數
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // 更新顯示
+            document.getElementById('day-counter').textContent = `Day ${diffDays}`;
+        }
+        
+        // 更新日期時間
+        function updateDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            
+            // 格式化小時為12小時制
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0應該顯示為12
+            
+            // 格式化分鐘
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            // 依照指定格式: 2025年3月11日 10:48pm
+            const formattedDateTime = `${year}年${month}月${day}日 ${hours}:${minutes}${ampm}`;
+            
+            document.getElementById('current-datetime').textContent = formattedDateTime;
+            
+            // 同時更新天數計數
+            calculateDays();
+        }
+        
+        // 初始化日期時間並每分鐘更新一次
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // 貓咪占卜結果列表
+        const encouragements = [
+            "別擔心，魚乾總會有的。",
+            "窗外的鳥飛快，而你如此優雅地眺望。",
+            "舔舔自己的爪子，生活總會再亮晶晶起來。",
+            "別害怕黑夜，你有最敏銳的眼睛和最柔軟的心。",
+            "今天翻倒了水碗，明天依然有清涼的水。",
+            "即使世界很大，你的小窩永遠是最溫暖的地方。",
+            "哪怕今天曬不到太陽，但太陽總在。",
+            "掉下來的毛髮讓你更輕盈！",
+            "你的每次蹭蹭，都成為別人溫暖的禮物。",
+            "每一次的跳躍，都更靠近星星。",
+            "我喵故我在。",
+            "不是所有喵星人都迷路了，有些貓只是自由地散步。",
+            "世界上最讓貓舒服的事，就是曬太陽與被愛。",
+            "一隻喵的價值，不在於牠抓了多少老鼠，而在於牠如何享受每一刻的生活。",
+            "別問貓咪能為你做什麼，問問你能為貓咪做什麼。",
+            "有些貓咪生來就是要躺在陽光下，而不是去追逐激光點。",
+            "抓不住的毛線球，總是最有趣的。",
+            "給貓咪一個窗台，牠能看透整個宇宙。",
+            "別人看見貓咪在睡覺，但牠的夢裡是廣闊的草原。",
+            "沒有什麼比貓咪在陽光下打滾更接近天堂。",
+            "把貓咪和多士綁在一起就變成永動機。",
+            "貓咪無需解釋，因為牠的存在已經是最好的理由。",
+            "貓咪不會嫌魚乾多。",
+            "寧惹主人，不惹睡覺的貓。",
+            "天上的飛鳥不為吃喝憂慮，貓咪也不為魚乾憂愁。",
+            "最乖巧的貓咪也曾推倒杯子。",
+            "沒有什麼是一隻貓咪不能克服的，如果有，那就兩隻貓咪一起克服。",
+            "三隻大橘貓，勝過一隻緬因貓。",
+            "吾日三省喵身：跟豬豬說早安乎？吃飽乎？早睡乎？",
+            "歲寒，然後知貓貓之胖胖也。",
+            "不經一番寒徹骨，怎得感冒傷風咳。（咦？）",
+            "世上無難事，有就不做了。",
+            "明日復明日，明日何其多！今天先睡覺，萬事明日磨。",
+            "風聲雨聲讀書聲，zzzzzzz",
+            "龍床不如紙箱。",
+            "台上一分鐘，台下六十秒。",
+            "橘貓會舔光每個罐罐。",
+            "塞翁失馬，跟貓咪沒有關係。",
+            "主人不努力，貓貓徒傷悲。",
+            "有智慧的貓貓不追求把手手放在上層。",
+            "我吸貓故我在。",
+            "成功屬於那些努力不懈的貓，因為它們總能跳到被禁止的桌子上。",
+            "不要為打翻的牛奶哭泣，因為貓已經在舔了。",
+            "人生苦短，及時養貓。",
+            "愛一隻貓就要接受它半夜踩你的臉。",
+            "不要和貓爭沙發，因為你會輸，貓卻很開心。",
+            "上天關閉了一扇門，貓會幫你打開衣櫃。",
+            "時間會治癒一切，除了貓推倒的東西。",
+            "心有多大，貓的領地就有多大。",
+            "貓就是在你趕文件時跳上鍵盤的傢伙。",
+            "貓永遠懷疑隔壁家的罐頭更好吃。",
+            "己所不欲，貓照樣會做給你看！",
+            "貓貓所見略同，所有箱子都是牠們的。",
+            "一個人可以被毀滅，但貓不會屈服----除了討要罐罐的時候。",
+            "機會是留給……貓從不準備，它會直接跳上去！",
+            "給貓一個紙箱，牠可以環遊世界。",
+            "你是最可愛。",
+            "貓睡成一個可愛的小月亮，如此安穩。",
+            "喵喵喵？喵！"
+        ];
+
+        // 圖片和圖片URL設定
+        const INITIAL_IMAGE = "https://i.imgur.com/RdfIav1.png";
+        const CLICKED_IMAGE = "https://i.imgur.com/Ff7QTIv.png";
+        const FINAL_IMAGE = "https://i.imgur.com/dgyoDVN.jpeg";
+        
+        // 儲存鍵名
+        const FORTUNE_STORAGE_KEY = 'dailyFortuneData';
+        
+        // 圖片點擊事件
+        let isAnimating = false;
+        let clickCount = 0;
+        const requiredClicks = 5;
+        let canPredict = true; // 是否可以進行占卜
+        let lastPrediction = null; // 最後一次占卜的結果
+        let lastPredictionTime = null; // 最後一次占卜的時間
+        
+        // 獲取當前時間到下一個早上7點的毫秒數
+        function getTimeToNextReset() {
+            const now = new Date();
+            // 明天早上7點
+            const tomorrow = new Date(now);
+            tomorrow.setDate(now.getDate() + 1);
+            tomorrow.setHours(7, 0, 0, 0);
+            
+            // 如果現在時間還沒到今天早上7點，那麼重置時間是今天早上7點
+            if (now.getHours() < 7) {
+                tomorrow.setDate(now.getDate());
+            }
+            
+            return tomorrow.getTime() - now.getTime();
+        }
+        
+        // 格式化倒計時時間為 HH:MM:SS 格式
+        function formatCountdown(milliseconds) {
+            // 轉換毫秒到小時、分鐘和秒
+            let totalSeconds = Math.floor(milliseconds / 1000);
+            let hours = Math.floor(totalSeconds / 3600);
+            let minutes = Math.floor((totalSeconds % 3600) / 60);
+            let seconds = totalSeconds % 60;
+            
+            // 補零
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        // 更新倒計時顯示
+        function updateCountdown() {
+            const countdownContainer = document.getElementById('countdown-container');
+            const countdownTimer = document.getElementById('countdown-timer');
+            
+            // 如果没有上次的占卜時間，隱藏倒計時
+            if (!lastPredictionTime) {
+                countdownContainer.classList.add('hidden');
+                return;
+            }
+            
+            const timeToNextReset = getTimeToNextReset();
+            countdownTimer.textContent = formatCountdown(timeToNextReset);
+            
+            // 如果倒計時結束，恢復占卜功能
+            if (timeToNextReset <= 0) {
+                resetFortuneState();
+            }
+        }
+        
+        // 获取圖片元素
+        const initialImage = document.getElementById('initial-image');
+        const clickedImage = document.getElementById('clicked-image');
+        const finalImage = document.getElementById('final-image');
+        const fortuneBox = document.getElementById('fortune-box');
+        const fortuneText = document.getElementById('fortune-text');
+        const loading = document.getElementById('loading');
+        const clickProgress = document.getElementById('click-progress');
+        const countdownContainer = document.getElementById('countdown-container');
+        
+        // 重置占卜狀態
+        function resetFortuneState() {
+            canPredict = true;
+            lastPrediction = null;
+            lastPredictionTime = null;
+            clickCount = 0;
+            
+            // 重置UI
+            showImage(initialImage);
+            fortuneBox.classList.remove('show');
+            countdownContainer.classList.add('hidden');
+            clickProgress.textContent = `再點擊 ${requiredClicks} 次`;
+            clickProgress.classList.add('show');
+            
+            // 清除本地儲存
+            try {
+                localStorage.removeItem(FORTUNE_STORAGE_KEY);
+            } catch (e) {
+                // 忽略錯誤
+            }
+        }
+        
+        // 保存占卜結果到本地儲存
+        function saveFortuneState(prediction) {
+            const now = new Date();
+            lastPrediction = prediction;
+            lastPredictionTime = now.getTime();
+            
+            try {
+                localStorage.setItem(FORTUNE_STORAGE_KEY, JSON.stringify({
+                    prediction: lastPrediction,
+                    time: lastPredictionTime
+                }));
+            } catch (e) {
+                // 忽略錯誤
+            }
+            
+            // 更新UI
+            canPredict = false;
+            fortuneText.textContent = lastPrediction;
+            fortuneBox.classList.add('show');
+            countdownContainer.classList.remove('hidden');
+            clickProgress.classList.remove('show');
+        }
+        
+        // 載入占卜狀態
+        function loadFortuneState() {
+            try {
+                const savedData = localStorage.getItem(FORTUNE_STORAGE_KEY);
+                if (savedData) {
+                    const { prediction, time } = JSON.parse(savedData);
+                    const savedTime = new Date(time);
+                    const now = new Date();
+                    
+                    // 檢查是否是同一個"重置周期"
+                    // 計算最後一次占卜時間到當前的最近一個7點是否已經過去
+                    let resetTime = new Date(savedTime);
+                    // 如果占卜時間是在7點之前，那麼重置時間是當天早上7點
+                    if (savedTime.getHours() < 7) {
+                        resetTime.setHours(7, 0, 0, 0);
+                    } 
+                    // 否則重置時間是隔天早上7點
+                    else {
+                        resetTime.setDate(resetTime.getDate() + 1);
+                        resetTime.setHours(7, 0, 0, 0);
+                    }
+                    
+                    // 如果現在時間還沒到重置時間，恢復上次占卜狀態
+                    if (now < resetTime) {
+                        lastPrediction = prediction;
+                        lastPredictionTime = time;
+                        canPredict = false;
+                        
+                        // 更新UI
+                        showImage(finalImage);
+                        fortuneText.textContent = lastPrediction;
+                        fortuneBox.classList.add('show');
+                        countdownContainer.classList.remove('hidden');
+                        clickProgress.classList.remove('show');
+                    } else {
+                        // 已過重置時間，重置狀態
+                        resetFortuneState();
+                    }
+                }
+            } catch (e) {
+                // 出錯時重置
+                resetFortuneState();
+            }
+        }
+        
+        // 預加載圖片以確保平滑過渡
+        function preloadImages() {
+            const images = [
+                "https://i.imgur.com/RdfIav1.png",
+                "https://i.imgur.com/Ff7QTIv.png",
+                "https://i.imgur.com/dgyoDVN.jpeg"
+            ];
+            
+            images.forEach(src => {
+                const img = new Image();
+                img.src = src;
+            });
+        }
+        
+        // 切換活動圖片
+        function showImage(imageToShow) {
+            // 隱藏所有圖片
+            initialImage.classList.remove('image-active');
+            clickedImage.classList.remove('image-active');
+            finalImage.classList.remove('image-active');
+            
+            // 顯示指定的圖片
+            imageToShow.classList.add('image-active');
+        }
+        
+        // 初始化
+        function init() {
+            // 載入保存的狀態
+            loadFortuneState();
+            
+            // 如果可以占卜，顯示點擊提示
+            if (canPredict) {
+                clickProgress.textContent = `再點擊 ${requiredClicks} 次`;
+                clickProgress.classList.add('show');
+            }
+            
+            // 預加載圖片
+            preloadImages();
+            
+            // 設置倒計時定時器
+            setInterval(updateCountdown, 1000);
+        }
+        
+        // 頁面載入時初始化
+        init();
+        
+        // 圖片點擊事件
+        document.getElementById('image-container').addEventListener('click', async function() {
+            // 如果不能占卜或动畫正在進行，返回
+            if (!canPredict || isAnimating) return;
+            
+            // 更新點擊計數
+            clickCount++;
+            
+            // 切換到點擊圖片
+            showImage(clickedImage);
+            
+            // 將圖片包裝器添加搖動動畫
+            const imageWrapper = document.querySelector('.image-wrapper');
+            imageWrapper.classList.add('shake');
+            
+            // 移除搖動動畫
+            setTimeout(() => {
+                imageWrapper.classList.remove('shake');
+            }, 500);
+            
+            // 0.5秒後恢復原圖片（如果還沒達到5次點擊）
+            setTimeout(() => {
+                // 如果還沒有完成所有點擊或者正在進行占卜，恢復原來的圖片
+                if (clickCount < requiredClicks && !isAnimating) {
+                    showImage(initialImage);
+                }
+            }, 500);
+            
+            // 檢查是否達到所需點擊次數
+            if (clickCount < requiredClicks) {
+                // 更新提示文字
+                clickProgress.textContent = `再點擊 ${requiredClicks - clickCount} 次`;
+                return;
+            }
+            
+            // 達到所需點擊次數，執行占卜
+            isAnimating = true;
+            
+            // 隱藏點擊提示
+            clickProgress.classList.remove('show');
+            
+            // 切換到最終圖片
+            showImage(finalImage);
+            
+            // 隱藏上一次的結果
+            fortuneBox.classList.remove('show');
+            
+            // 顯示加載動畫
+            loading.style.display = 'block';
+            
+            // 隨機選擇一個鼓勵句子
+            const randomIndex = Math.floor(Math.random() * encouragements.length);
+            const selectedEncouragement = encouragements[randomIndex];
+            
+            // 模擬思考時間
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // 隱藏加載動畫
+            loading.style.display = 'none';
+            
+            // 保存並顯示占卜結果
+            saveFortuneState(selectedEncouragement);
+            
+            // 設置動畫結束
+            isAnimating = false;
+        });
+    </script>
+
+
+</body></html>
