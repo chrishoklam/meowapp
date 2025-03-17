@@ -1,5 +1,8 @@
-<!DOCTYPE html><html lang="zh-TW"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
-     <meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>貓貓專屬迷你占卜</title>
      
@@ -594,9 +597,74 @@
             transform: translate(-50%, -50%);
             z-index: 30;
         }
+
+        /* 警示模態窗口 */
+        .notice-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .notice-container {
+            background-color: white;
+            padding: calc(1.5rem * var(--app-scale));
+            border-radius: 12px;
+            width: 90%;
+            max-width: calc(400px * var(--app-scale));
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .notice-title {
+            font-size: calc(1.2rem * var(--app-scale));
+            font-weight: bold;
+            color: #E53935;
+            margin-bottom: calc(1rem * var(--app-scale));
+        }
+        
+        .notice-content {
+            font-size: calc(1rem * var(--app-scale));
+            margin-bottom: calc(1.5rem * var(--app-scale));
+            line-height: 1.6;
+        }
+        
+        .notice-button {
+            background-color: #5D5CDE;
+            color: white;
+            padding: calc(0.6rem * var(--app-scale)) calc(1.2rem * var(--app-scale));
+            border-radius: 8px;
+            border: none;
+            font-size: calc(1rem * var(--app-scale));
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .notice-button:hover {
+            background-color: #4A49B7;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center bg-white text-gray-800">
+    <!-- 提示消息 -->
+    <div id="notice-overlay" class="notice-overlay" style="display: none;">
+        <div class="notice-container">
+            <div class="notice-title">⚠️ 重要說明</div>
+            <div class="notice-content">
+                由於技術限制，此網頁無法保存占卜和簽到狀態。<br><br>
+                <b>每次重新整理頁面後，占卜及簽到次數將重置。</b><br><br>
+                建議將本網頁加入收藏，避免重整頁面。
+            </div>
+            <button id="notice-button" class="notice-button">我已了解</button>
+        </div>
+    </div>
+
     <div class="app-container w-full flex flex-col items-center justify-between">
         <!-- 信件箱 - 改名為信件 -->
         <div id="mailbox" class="mailbox button-common">
@@ -698,6 +766,7 @@
 
         <footer class="app-footer w-full max-w-xl text-center text-gray-500">
             <p>輕觸圖片，獲得今日的特別鼓勵吧！</p>
+            <p class="mt-1 text-xs text-red-500">注意: 重新整理頁面會重置占卜及簽到狀態</p>
         </footer>
     </div>
     
@@ -758,6 +827,9 @@
     </script>
 
     <script>
+        // 是否已顯示過提示
+        let firstVisitShown = false;
+        
         // 簽到計數器 - 管理累計占卜次數
         const CHECKIN_COUNTER_KEY = 'catFortuneCheckinCount';
         const LAST_CHECKIN_DATE_KEY = 'catFortuneLastCheckinDate';
@@ -1149,6 +1221,7 @@
             canPredict = true;
             lastPrediction = null;
             lastPredictionTime = null;
+            todayPredicted = false; // 重置今天是否已占卜标记
             clickCount = 0;
             
             // 重置UI
@@ -1377,8 +1450,33 @@
             });
         }
         
+        // 显示警告消息
+        function showNoticeModal() {
+            const noticeOverlay = document.getElementById('notice-overlay');
+            const noticeButton = document.getElementById('notice-button');
+            
+            noticeOverlay.style.display = 'flex';
+            
+            noticeButton.addEventListener('click', () => {
+                noticeOverlay.style.display = 'none';
+                firstVisitShown = true;
+            });
+        }
+        
+        // 添加刷新前提醒
+        window.addEventListener('beforeunload', function(e) {
+            const message = '重整頁面將重置占卜和簽到狀態。確定要離開嗎？';
+            e.returnValue = message;
+            return message;
+        });
+        
         // 初始化
         function init() {
+            // 顯示首次訪問提示
+            if (!firstVisitShown) {
+                showNoticeModal();
+            }
+
             // 載入保存的狀態
             loadFortuneState();
             
@@ -1414,7 +1512,7 @@
         }
         
         // 頁面載入時初始化
-        init();
+        document.addEventListener('DOMContentLoaded', init);
         
         // 顯示已經占卜過的提示
         function showAlreadyPredictedMessage() {
@@ -1536,5 +1634,5 @@
     </script>
 
 
-</body></html>
-
+</body>
+</html>
