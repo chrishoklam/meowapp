@@ -162,7 +162,7 @@
             margin-right: calc(0.5rem * var(--app-scale));
         }
         
-        /* 信件列表和內容區域 */
+        /* 郵箱列表和內容區域 */
         .mail-view, .mail-detail-view {
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
@@ -225,7 +225,7 @@
             white-space: pre-line;
         }
         
-        /* 信件詳細頁面的標題 */
+        /* 郵箱詳細頁面的標題 */
         .mail-detail-title {
             font-size: calc(1.25rem * var(--app-scale));
             font-weight: bold;
@@ -309,7 +309,7 @@
             font-display: swap;
         }
         
-        /* 共享按钮样式 - 为信件和签到框设置共同的样式 */
+        /* 共享按钮样式 - 为郵箱和签到框设置共同的样式 */
         .button-common {
             position: absolute;
             left: calc(1rem * var(--app-scale));
@@ -326,7 +326,7 @@
             font-weight: 500;
         }
         
-        /* 信件箱樣式 */
+        /* 郵箱樣式 */
         .mailbox {
             top: calc(5rem * var(--app-scale)); /* 再提高3rem位置到5rem */
             background-color: #E3F2FD; /* 淺藍色底色 */
@@ -347,7 +347,7 @@
             font-size: calc(1.2rem * var(--app-scale));
         }
         
-        /* 簽到計數器樣式 - 與信件框保持一致寬度 */
+        /* 簽到計數器樣式 - 與郵箱框保持一致寬度 */
         .checkin-counter {
             top: calc(9rem * var(--app-scale)); /* 再提高3rem位置到9rem，保持4rem间距 */
             background-color: #FFF8E1; /* 淺黃色底色 */
@@ -600,10 +600,10 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center bg-white text-gray-800">
     <div class="app-container w-full flex flex-col items-center justify-between">
-        <!-- 信件箱 - 改名為信件 -->
+        <!-- 信件箱 - 改名為郵箱 -->
         <div id="mailbox" class="mailbox button-common">
             <span class="mailbox-icon">❤️</span>
-            信件
+            郵箱
         </div>
         
         <!-- 簽到計數器 -->
@@ -617,7 +617,7 @@
             下次簽到: <span id="next-checkin-time">00:00:00</span>
         </div>
         
-        <!-- 信件模態窗口 -->
+        <!-- 郵箱模態窗口 -->
         <div id="mail-modal" class="modal-overlay">
             <div class="modal-container">
                 <div class="modal-header">
@@ -625,7 +625,7 @@
                     <button class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <!-- 信件列表視圖 -->
+                    <!-- 郵箱列表視圖 -->
                     <div id="mail-list-view" class="mail-view">
                         <ul class="mail-list">
                             <li class="mail-item" data-mail-id="mail-1">
@@ -635,7 +635,7 @@
                         </ul>
                     </div>
                     
-                    <!-- 信件內容視圖 - 移動返回按鈕到内容后，移除标题 -->
+                    <!-- 郵箱內容視圖 - 移動返回按鈕到内容后，移除标题 -->
                     <div id="mail-detail-view" class="mail-detail-view hidden">
                         <div id="mail-detail-content" class="mail-content"></div>
                         <button id="back-to-list" class="back-button">
@@ -646,7 +646,7 @@
             </div>
         </div>
         
-        <!-- 隱藏的信件內容 -->
+        <!-- 隱藏的郵箱內容 -->
         <div id="mail-contents" style="display: none;">
             <div id="mail-1" class="mail-content-data">
 親愛的貓貓：
@@ -1117,6 +1117,14 @@
             "你的每次蹭蹭，都是別人溫暖的禮物。",
             "每一次的跳躍，都更靠近星星。",
             "我喵故我在。",
+            "如果煎八爪魚腳腳，就會傳出香味。",
+            "在泥巴裡打滾的除了豬豬，還有近豬者豬的貓貓。",
+            "沒有什麼是不可能的，除了一天不吃罐罐。",
+            "貓貓不跑步也許是好的。跑太快就變豹豹了。",
+            "身為一隻優秀的貓貓應該要懂得攀岩。誒貓貓有興趣一起去玩嗎？",
+            "貓貓跟士多啤梨的共同點就是……都是我愛的！",
+            "閉眼十秒再睜眼，會有好運氣哦。",
+            "好想和貓貓去旅行:3:3:3",
             "路上的貓不都是迷路了，有些只是自由地散步。",
             "世界上最讓貓舒服的事，就是曬太陽與被愛。",
             "一隻喵的價值，不在於牠抓了多少老鼠，而在於牠如何享受生活。",
@@ -1395,7 +1403,7 @@
             imageToShow.classList.add('image-active');
         }
         
-        // 初始化信件箱功能
+        // 初始化郵箱功能
         function initMailbox() {
             const mailbox = document.getElementById('mailbox');
             const mailModal = document.getElementById('mail-modal');
@@ -1407,7 +1415,7 @@
             const mailDetailContent = document.getElementById('mail-detail-content');
             const mailContentsContainer = document.getElementById('mail-contents');
             
-            // 打開信件箱 - 每次打開都顯示列表視圖
+            // 打開郵箱 - 每次打開都顯示列表視圖
             mailbox.addEventListener('click', () => {
                 // 重置視圖
                 mailListView.classList.remove('hidden');
@@ -1417,7 +1425,7 @@
                 mailModal.classList.add('active');
             });
             
-            // 關閉信件箱
+            // 關閉郵箱
             closeBtn.addEventListener('click', () => {
                 mailModal.classList.remove('active');
                 
@@ -1428,15 +1436,15 @@
                 }, 300);
             });
             
-            // 點擊信件列表項目
+            // 點擊郵箱列表項目
             mailItems.forEach(item => {
                 item.addEventListener('click', () => {
-                    // 獲取信件數據
+                    // 獲取郵箱數據
                     const mailId = item.getAttribute('data-mail-id');
                     const mailContentElement = mailContentsContainer.querySelector(`#${mailId}`);
                     const mailContent = mailContentElement ? mailContentElement.textContent : '無內容';
                     
-                    // 填充信件詳情視圖
+                    // 填充郵箱詳情視圖
                     mailDetailContent.textContent = mailContent;
                     
                     // 顯示詳情視圖，隱藏列表視圖
@@ -1505,7 +1513,7 @@
             // 设置签到倒计时定时器
             setInterval(updateCheckinCountdown, 1000);
             
-            // 初始化信件箱功能
+            // 初始化郵箱功能
             initMailbox();
             
             // 簽到按鈕點擊事件
