@@ -4,9 +4,11 @@
     <title>貓貓專屬迷你占卜</title>
      
     <link rel="icon" href="icons/icon-192x192.png" sizes="192x192" type="image/png">
-     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-     <link rel="manifest" href="manifest.json">
-     
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="manifest" href="manifest.json">
+    <!-- 添加可愛的字體 - 確保字體完全加載 -->
+    <link href="https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&family=Kosugi+Maru&family=Baloo+2:wght@600;700&display=swap" rel="stylesheet" crossorigin="anonymous" media="all">
+    
     <!-- 專用於Chrome的PWA支持 -->
     <!-- 默認favicon（使用base64編碼的小PNG圖標） -->
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAEJQTFRFAFz/AV3/Al7/A1//BGD/BWH/Dl//D2D/EGD/SXz/Sn3/kK7/ka//z9f/0Nj/0dn/4uf/4+j/8vX/8/X/9fb//f3//v7/bIBJkQAAACZ0Uk5TAAECBQcNDxUfICQmJy0uNTo7PUBBTE5YXWNveYqTpqu1yM7c7fb95XPJAAAAt0lEQVR42q2TSQ6DMBAEG4JZbMj+/P8nUQAplsm4hLpstyVXOTbqbZYgtlnfk8iwi+QcuZAEsiF7PGCD7J2SJwxIguRNvkwEgkmU3JYkEUwSSw5sNB1MYqJkCaArmCTNDmw0XThJZpLlgXZy4Gvx7JLcPBtfEhBsKBIbPkFRtKBOFFf2q1ApIoCqaKPdLPr5dPFt4nnJtOFxzb7jdc1OwvOaXcnjP3DW4PTkd8cP8meAn+NTGADR/RXVyPYnZAAAAABJRU5ErkJggg==">
@@ -45,6 +47,190 @@
     <style>
         :root {
             --app-scale: 1;
+        }
+        
+        /* 背景图片设置 */
+        body {
+            background-image: url('https://i.imgur.com/Q5NDOF7.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        
+        /* 添加半透明覆盖层，使前景内容更易读 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: -1;
+        }
+        
+        /* 模態窗口樣式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-container {
+            background-color: white;
+            padding: calc(1.5rem * var(--app-scale));
+            border-radius: 12px;
+            width: 90%;
+            max-width: calc(500px * var(--app-scale));
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-container {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: calc(1rem * var(--app-scale));
+            border-bottom: 1px solid #eee;
+            padding-bottom: calc(0.75rem * var(--app-scale));
+        }
+        
+        .modal-title {
+            font-size: calc(1.5rem * var(--app-scale));
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .modal-close {
+            font-size: calc(1.5rem * var(--app-scale));
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        /* 返回按鈕樣式 - 放在右邊 */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            padding: calc(0.5rem * var(--app-scale)) calc(1rem * var(--app-scale));
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            font-size: calc(1rem * var(--app-scale));
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: calc(1rem * var(--app-scale));
+            float: right; /* 放在右邊 */
+        }
+        
+        .back-button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .back-button-icon {
+            margin-right: calc(0.5rem * var(--app-scale));
+        }
+        
+        /* 信件列表和內容區域 */
+        .mail-view, .mail-detail-view {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .mail-view.hidden, .mail-detail-view.hidden {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .mail-view, .mail-detail-view:not(.hidden) {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .mail-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mail-item {
+            padding: calc(0.75rem * var(--app-scale));
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: calc(0.75rem * var(--app-scale));
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .mail-item:hover {
+            background-color: #f5f5f5;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mail-item.active {
+            border-color: #90CAF9;
+            background-color: #E3F2FD;
+        }
+        
+        .mail-icon {
+            margin-right: calc(0.75rem * var(--app-scale));
+            font-size: calc(1.25rem * var(--app-scale));
+            color: #FF6B6B;
+        }
+        
+        .mail-title {
+            font-weight: 500;
+        }
+        
+        .mail-content {
+            padding: calc(1.5rem * var(--app-scale));
+            line-height: 1.6;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            min-height: calc(150px * var(--app-scale));
+            white-space: pre-line;
+        }
+        
+        /* 信件詳細頁面的標題 */
+        .mail-detail-title {
+            font-size: calc(1.25rem * var(--app-scale));
+            font-weight: bold;
+            margin-bottom: calc(1rem * var(--app-scale));
+            color: #333;
+            padding-bottom: calc(0.5rem * var(--app-scale));
+            border-bottom: 1px solid #eee;
         }
         
         /* 整體容器設置為視口高度，避免滾動 */
@@ -110,10 +296,95 @@
             }
         }
         
-        /* 標題縮放 */
+        /* 標題縮放和可愛字體 - 移除粗體 */
         .app-title {
             font-size: calc(1.875rem * var(--app-scale));
             margin-bottom: calc(0.5rem * var(--app-scale));
+            font-family: 'Baloo 2', cursive !important;
+            font-weight: 400; /* 移除粗體 */
+            letter-spacing: 0.03em;
+            /* 確保字體加載前有適當的備用選項 */
+            font-display: swap;
+        }
+        
+        /* 共享按钮样式 - 为信件和签到框设置共同的样式 */
+        .button-common {
+            position: absolute;
+            left: calc(1rem * var(--app-scale));
+            border-radius: 12px;
+            padding: calc(0.8rem * var(--app-scale)) calc(1.2rem * var(--app-scale));
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: calc(8.5rem * var(--app-scale)); /* 增加宽度，避免两行显示 */
+            white-space: nowrap; /* 防止文本换行 */
+            font-size: calc(1.1rem * var(--app-scale)); /* 调整字体大小为1.1rem */
+            font-weight: 500;
+        }
+        
+        /* 信件箱樣式 */
+        .mailbox {
+            top: calc(5rem * var(--app-scale)); /* 再提高3rem位置到5rem */
+            background-color: #E3F2FD; /* 淺藍色底色 */
+            color: #333333;
+            transition: all 0.3s ease;
+            border: 2px solid #90CAF9;
+            cursor: pointer;
+        }
+        
+        .mailbox:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            background-color: #BBDEFB;
+        }
+        
+        .mailbox-icon {
+            margin-right: calc(0.6rem * var(--app-scale));
+            font-size: calc(1.2rem * var(--app-scale));
+        }
+        
+        /* 簽到計數器樣式 - 與信件框保持一致寬度 */
+        .checkin-counter {
+            top: calc(9rem * var(--app-scale)); /* 再提高3rem位置到9rem，保持4rem间距 */
+            background-color: #FFF8E1; /* 淺黃色底色 */
+            color: #333333; /* 改為黑色 */
+            transition: all 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); /* 更流暢的動畫 */
+            border: 2px solid #FFE082;
+            cursor: pointer; /* 可点击状态 */
+        }
+        
+        .checkin-icon {
+            margin-right: calc(0.6rem * var(--app-scale));
+            font-size: calc(1.2rem * var(--app-scale));
+        }
+        
+        /* 簽到計數動畫 - 更豐富的動畫效果 */
+        @keyframes counter-update {
+            0% { transform: scale(1); }
+            20% { transform: scale(1.4); }
+            40% { transform: scale(0.9); }
+            60% { transform: scale(1.2); }
+            80% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 簽到成功後的閃爍效果 */
+        @keyframes checkin-success {
+            0% { box-shadow: 0 0 5px rgba(255, 193, 7, 0.5); background-color: #FFF8E1; }
+            50% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.8); background-color: #FFE082; }
+            100% { box-shadow: 0 0 5px rgba(255, 193, 7, 0.5); background-color: #FFF8E1; }
+        }
+        
+        .counter-animation {
+            animation: counter-update 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #FF6B6B;
+            font-weight: bold;
+        }
+        
+        .checkin-success {
+            animation: checkin-success 1.5s ease-in-out;
         }
         
         /* 日期和天數縮放 */
@@ -127,14 +398,15 @@
             margin-top: calc(0.25rem * var(--app-scale));
         }
         
-        /* 圖片容器縮放 */
+        /* 圖片容器縮放 - 优化小屏幕显示 */
         .image-container {
             position: relative;
             width: calc(100% * var(--app-scale));
             max-width: calc(350px * var(--app-scale));
+            min-width: 200px; /* 设置最小宽度，防止过度缩小 */
             height: auto;
             aspect-ratio: 1.14 / 1; /* 維持原始的寬高比例 */
-            margin: calc(5px * var(--app-scale)) auto calc(30px * var(--app-scale)) auto; /* 修正頂部間距 */
+            margin: calc(-2rem * var(--app-scale)) auto calc(30px * var(--app-scale)) auto; /* 增加负margin的值，提高图片位置 */
             cursor: pointer;
             transition: transform 0.3s ease;
             display: flex;
@@ -143,16 +415,25 @@
             z-index: 1; /* 確保圖片在較低層級 */
         }
         
-        /* 響應式調整 */
+        /* 小屏幕特殊处理 */
+        @media (max-height: 600px) {
+            .image-container {
+                margin-top: -40px; /* 在小屏幕上使用固定的负margin */
+            }
+        }
+        
+        /* 響應式調整 - 设置最小宽度 */
         @media (max-width: 640px) {
             .image-container {
-                max-width: calc(250px * var(--app-scale));
+                max-width: calc(280px * var(--app-scale));
+                min-width: 200px;
             }
         }
         
         @media (max-width: 480px) {
             .image-container {
-                max-width: calc(220px * var(--app-scale));
+                max-width: calc(250px * var(--app-scale));
+                min-width: 180px;
             }
         }
         
@@ -182,6 +463,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* 移除边框效果 */
+            padding: 0;
         }
         
         .main-image {
@@ -189,7 +472,6 @@
             height: 100%;
             object-fit: cover; /* 改為cover以實現剪裁效果 */
             object-position: center; /* 只顯示中間部分 */
-            border-radius: 12px;
             position: absolute;
             transition: opacity 0.3s ease;
             clip-path: inset(20% 0 20% 0); /* 剪裁上下各20% */
@@ -203,10 +485,10 @@
             opacity: 1;
         }
         
-        /* 點擊計數提示 */
+        /* 點擊計數提示 - 调整与图片的距离为5rem */
         .click-progress {
             position: absolute;
-            bottom: calc(-25px * var(--app-scale));
+            bottom: calc(-5rem * var(--app-scale)); /* 修改为5rem距离 */
             left: 0;
             right: 0;
             text-align: center;
@@ -215,6 +497,7 @@
             font-size: calc(18px * var(--app-scale)); /* 縮放字體大小 */
             opacity: 0;
             transition: opacity 0.3s ease;
+            font-family: 'Hachi Maru Pop', cursive; /* 添加可愛字體 */
         }
         
         .click-progress.show {
@@ -295,6 +578,64 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center bg-white text-gray-800">
     <div class="app-container w-full flex flex-col items-center justify-between">
+        <!-- 信件箱 - 改名為信件 -->
+        <div id="mailbox" class="mailbox button-common">
+            <span class="mailbox-icon">❤️</span>
+            信件
+        </div>
+        
+        <!-- 簽到計數器 - 移除cursor-pointer類 -->
+        <div id="checkin-counter" class="checkin-counter button-common">
+            <span class="checkin-icon">🐾</span>
+            <span id="checkin-count">0</span> 次簽到
+        </div>
+        
+        <!-- 信件模態窗口 -->
+        <div id="mail-modal" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h2 class="modal-title">貓貓通訊</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- 信件列表視圖 -->
+                    <div id="mail-list-view" class="mail-view">
+                        <ul class="mail-list">
+                            <li class="mail-item" data-mail-id="mail-1">
+                                <span class="mail-icon">❤️</span>
+                                <span class="mail-title">貓貓生日</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 信件內容視圖 - 移動返回按鈕到内容后，移除标题 -->
+                    <div id="mail-detail-view" class="mail-detail-view hidden">
+                        <div id="mail-detail-content" class="mail-content"></div>
+                        <button id="back-to-list" class="back-button">
+                            <span class="back-button-icon">←</span> 返回
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 隱藏的信件內容 -->
+        <div id="mail-contents" style="display: none;">
+            <div id="mail-1" class="mail-content-data">
+親愛的貓貓：
+
+誒，第二次跟貓貓過生日了，雖然我記性不好，但上一年在車車跟貓貓過生日的畫面仍深刻！當時貓貓說沒太期待過生日，我一方面希望貓貓期待（證明貓貓希望得到我的心意），另一方面害怕貓貓期待（因為我覺得準備得不好嗚）TAT
+
+最近很疲憊，東西好像做不完似的，可能因為實際工作時間比之前短了（沒留到10點（X）每當在學校工作許久後才有時間找貓貓，便會覺得愧疚。現在不在一個地方工作，見面的機會少了很多，總覺得不滿足。加上星期六日不是我忙就是你累，有時會暢想，要是平日回家能看到貓貓就好了www不僅僅是我，貓貓現在也工作到很晚！沒資格說我喜歡OT了！我會做著家務等貓貓的（咦
+
+雖然貓貓常常不給親親不給摸摸（肚肚），可我依然愛著你的幼稚你的口不對心。被你推開的時候我會提醒自己別太難過，因為這是你的反射動作。情人節的時候說之後送不同花花給貓貓，像開圖鑑似的。其實這次我本打算做針織玫瑰花，買了材料包，商家聲稱會附上保姆級教學，然而我連影片開頭都看不懂@.@奮戰了一小時仍沒法開始，結果先擱置一邊了。還好可以在這裡添上背景的小黃花，姑且也算花？
+
+呀呀呀，說了很多沒營養的話。先說到這裡，不定期更新:P 貓貓生日快樂！
+
+18/3/2025
+            </div>
+        </div>
+        
         <header class="w-full max-w-xl text-center">
             <h1 class="app-title font-bold text-primary">貓貓專屬迷你占卜</h1>
             <div id="current-datetime" class="date-display font-medium text-gray-700"></div>
@@ -392,6 +733,115 @@
     </script>
 
     <script>
+        // 簽到計數器 - 管理累計占卜次數
+        const CHECKIN_COUNTER_KEY = 'catFortuneCheckinCount';
+        const LAST_CHECKIN_DATE_KEY = 'catFortuneLastCheckinDate';
+        
+        // 加載並顯示累計簽到次數
+        function loadCheckinCount() {
+            let count = 0;
+            try {
+                const savedCount = localStorage.getItem(CHECKIN_COUNTER_KEY);
+                if (savedCount) {
+                    count = parseInt(savedCount, 10);
+                }
+            } catch (e) {
+                // 忽略錯誤
+                console.log('無法讀取簽到計數:', e);
+            }
+            
+            // 更新UI顯示
+            document.getElementById('checkin-count').textContent = count;
+            return count;
+        }
+        
+        // 檢查今天是否已經簽到過
+        function hasCheckedInToday() {
+            try {
+                const lastCheckinDate = localStorage.getItem(LAST_CHECKIN_DATE_KEY);
+                if (!lastCheckinDate) return false;
+                
+                const today = new Date();
+                const lastDate = new Date(parseInt(lastCheckinDate, 10));
+                
+                // 檢查是否為同一天
+                return today.toDateString() === lastDate.toDateString();
+            } catch (e) {
+                console.log('檢查今日簽到狀態失敗:', e);
+                return false;
+            }
+        }
+        
+        // 增加簽到計數並保存 - 加強動畫效果
+        function incrementCheckinCount() {
+            let count = loadCheckinCount();
+            count += 1;
+            
+            try {
+                localStorage.setItem(CHECKIN_COUNTER_KEY, count.toString());
+                
+                // 使用更明顯的動畫效果
+                const countElement = document.getElementById('checkin-count');
+                const counter = document.getElementById('checkin-counter');
+                
+                // 先移除之前的任何動畫類
+                countElement.classList.remove('counter-animation');
+                counter.classList.remove('checkin-success');
+                counter.classList.remove('animate-pulse');
+                
+                // 觸發重排以確保動畫效果重新應用
+                void counter.offsetWidth;
+                
+                // 更新UI顯示
+                countElement.textContent = count;
+                
+                // 添加更多動畫類
+                countElement.classList.add('counter-animation');
+                counter.classList.add('checkin-success');
+                
+                // 添加簽到成功文本提示
+                const successText = document.createElement('div');
+                successText.textContent = '簽到成功！';
+                successText.style.position = 'absolute';
+                successText.style.top = '-30px';
+                successText.style.left = '0';
+                successText.style.right = '0';
+                successText.style.textAlign = 'center';
+                successText.style.color = '#FF6B6B';
+                successText.style.fontWeight = 'bold';
+                successText.style.fontSize = `${1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'))}rem`;
+                successText.style.opacity = '0';
+                successText.style.transition = 'opacity 0.3s ease-in-out, transform 0.8s ease-out';
+                successText.style.transform = 'translateY(0)';
+                
+                counter.appendChild(successText);
+                
+                // 顯示文本提示並動畫
+                setTimeout(() => {
+                    successText.style.opacity = '1';
+                }, 100);
+                
+                setTimeout(() => {
+                    successText.style.transform = 'translateY(-20px)';
+                }, 200);
+                
+                // 動畫結束後移除類和提示
+                setTimeout(() => {
+                    countElement.classList.remove('counter-animation');
+                    counter.classList.remove('checkin-success');
+                    successText.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        successText.remove();
+                    }, 500);
+                }, 2000);
+            } catch (e) {
+                // 忽略錯誤
+                console.log('無法保存簽到計數:', e);
+            }
+            
+            return count;
+        }
         
         // 計算從2024年2月15日到今天的天數
         function calculateDays() {
@@ -589,7 +1039,7 @@
             showImage(initialImage);
             fortuneBox.classList.remove('show');
             countdownContainer.classList.add('hidden');
-            clickProgress.textContent = `再點擊 ${requiredClicks} 次`;
+            clickProgress.textContent = `再按 ${requiredClicks} 次`;
             clickProgress.classList.add('show');
             
             // 清除本地儲存
@@ -607,12 +1057,39 @@
             lastPredictionTime = now.getTime();
             
             try {
-                localStorage.setItem(FORTUNE_STORAGE_KEY, JSON.stringify({
+                // 使用 sessionStorage 代替 localStorage，这样在页面刷新后仍可用，但在浏览器关闭后会清除
+                sessionStorage.setItem(FORTUNE_STORAGE_KEY, JSON.stringify({
                     prediction: lastPrediction,
                     time: lastPredictionTime
                 }));
+                
+                // 尝试使用localStorage作为备份
+                try {
+                    localStorage.setItem(FORTUNE_STORAGE_KEY, JSON.stringify({
+                        prediction: lastPrediction,
+                        time: lastPredictionTime
+                    }));
+                } catch (storageErr) {
+                    console.log('localStorage保存失败，但已保存到sessionStorage:', storageErr);
+                }
+                
+                // 確保在存儲占卜結果後再增加簽到次數，但僅在今日未簽到的情況下
+                setTimeout(() => {
+                    // 檢查每日簽到上限
+                    if (!hasCheckedInToday()) {
+                        // 增加簽到次數
+                        incrementCheckinCount();
+                        
+                        // 保存今天已簽到的紀錄
+                        try {
+                            localStorage.setItem(LAST_CHECKIN_DATE_KEY, now.getTime().toString());
+                        } catch (e) {
+                            sessionStorage.setItem(LAST_CHECKIN_DATE_KEY, now.getTime().toString());
+                        }
+                    }
+                }, 100);
             } catch (e) {
-                // 忽略錯誤
+                console.log('保存占卜結果失敗:', e);
             }
             
             // 更新UI
@@ -626,7 +1103,14 @@
         // 載入占卜狀態
         function loadFortuneState() {
             try {
-                const savedData = localStorage.getItem(FORTUNE_STORAGE_KEY);
+                // 先尝试从localStorage获取
+                let savedData = localStorage.getItem(FORTUNE_STORAGE_KEY);
+                
+                // 如果localStorage没有数据，尝试从sessionStorage获取
+                if (!savedData) {
+                    savedData = sessionStorage.getItem(FORTUNE_STORAGE_KEY);
+                }
+                
                 if (savedData) {
                     const { prediction, time } = JSON.parse(savedData);
                     const savedTime = new Date(time);
@@ -663,6 +1147,7 @@
                     }
                 }
             } catch (e) {
+                console.error('載入占卜狀態失敗:', e);
                 // 出錯時重置
                 resetFortuneState();
             }
@@ -693,14 +1178,102 @@
             imageToShow.classList.add('image-active');
         }
         
+        // 初始化信件箱功能
+        function initMailbox() {
+            const mailbox = document.getElementById('mailbox');
+            const mailModal = document.getElementById('mail-modal');
+            const closeBtn = mailModal.querySelector('.modal-close');
+            const mailItems = mailModal.querySelectorAll('.mail-item');
+            const mailListView = document.getElementById('mail-list-view');
+            const mailDetailView = document.getElementById('mail-detail-view');
+            const backToListBtn = document.getElementById('back-to-list');
+            const mailDetailTitle = document.getElementById('mail-detail-title');
+            const mailDetailContent = document.getElementById('mail-detail-content');
+            const mailContentsContainer = document.getElementById('mail-contents');
+            
+            // 打開信件箱 - 每次打開都顯示列表視圖
+            mailbox.addEventListener('click', () => {
+                // 重置視圖
+                mailListView.classList.remove('hidden');
+                mailDetailView.classList.add('hidden');
+                
+                // 顯示模態窗口
+                mailModal.classList.add('active');
+            });
+            
+            // 關閉信件箱
+            closeBtn.addEventListener('click', () => {
+                mailModal.classList.remove('active');
+                
+                // 延遲後重置視圖，以便下次打開顯示列表
+                setTimeout(() => {
+                    mailListView.classList.remove('hidden');
+                    mailDetailView.classList.add('hidden');
+                }, 300);
+            });
+            
+            // 點擊信件列表項目
+            mailItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // 獲取信件數據
+                    const mailId = item.getAttribute('data-mail-id');
+                    const mailContentElement = mailContentsContainer.querySelector(`#${mailId}`);
+                    const mailContent = mailContentElement ? mailContentElement.textContent : '無內容';
+                    
+                    // 填充信件詳情視圖
+                    mailDetailContent.textContent = mailContent;
+                    
+                    // 顯示詳情視圖，隱藏列表視圖
+                    mailListView.classList.add('hidden');
+                    mailDetailView.classList.remove('hidden');
+                });
+            });
+            
+            // 返回按鈕點擊事件
+            backToListBtn.addEventListener('click', () => {
+                // 顯示列表視圖，隱藏詳情視圖
+                mailListView.classList.remove('hidden');
+                mailDetailView.classList.add('hidden');
+            });
+            
+            // 點擊模態窗口背景關閉窗口
+            mailModal.addEventListener('click', (e) => {
+                if (e.target === mailModal) {
+                    mailModal.classList.remove('active');
+                    
+                    // 延遲後重置視圖
+                    setTimeout(() => {
+                        mailListView.classList.remove('hidden');
+                        mailDetailView.classList.add('hidden');
+                    }, 300);
+                }
+            });
+            
+            // 添加ESC鍵關閉功能
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && mailModal.classList.contains('active')) {
+                    mailModal.classList.remove('active');
+                    
+                    // 延遲後重置視圖
+                    setTimeout(() => {
+                        mailListView.classList.remove('hidden');
+                        mailDetailView.classList.add('hidden');
+                    }, 300);
+                }
+            });
+        }
+        
         // 初始化
         function init() {
             // 載入保存的狀態
             loadFortuneState();
             
+            // 載入打卡計數
+            loadCheckinCount();
+            
             // 如果可以占卜，顯示點擊提示
             if (canPredict) {
-                clickProgress.textContent = `再點擊 ${requiredClicks} 次`;
+                clickProgress.textContent = `再按 ${requiredClicks} 次`;
                 clickProgress.classList.add('show');
             }
             
@@ -709,6 +1282,27 @@
             
             // 設置倒計時定時器
             setInterval(updateCountdown, 1000);
+            
+            // 初始化信件箱功能
+            initMailbox();
+            
+            // 簡化版的簽到按鈕點擊事件
+            const checkinCounter = document.getElementById('checkin-counter');
+            checkinCounter.addEventListener('click', function() {
+                // 直接增加簽到計數，不做日期檢查
+                // 這樣簡化可以確保功能始終可用
+                incrementCheckinCount();
+                
+                try {
+                    // 嘗試儲存簽到日期，但不影響主功能
+                    const now = new Date();
+                    localStorage.setItem(LAST_CHECKIN_DATE_KEY, now.getTime().toString());
+                } catch (e) {
+                    console.log('簽到日期保存失敗，但簽到計數已增加');
+                }
+                
+                console.log('簽到成功！');
+            });
         }
         
         // 頁面載入時初始化
@@ -745,7 +1339,7 @@
             // 檢查是否達到所需點擊次數
             if (clickCount < requiredClicks) {
                 // 更新提示文字
-                clickProgress.textContent = `再點擊 ${requiredClicks - clickCount} 次`;
+                clickProgress.textContent = `再按 ${requiredClicks - clickCount} 次`;
                 return;
             }
             
@@ -784,3 +1378,4 @@
 
 
 </body></html>
+
