@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>貓貓專屬迷你占卜</title>
@@ -597,74 +596,9 @@
             transform: translate(-50%, -50%);
             z-index: 30;
         }
-
-        /* 警示模態窗口 */
-        .notice-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        
-        .notice-container {
-            background-color: white;
-            padding: calc(1.5rem * var(--app-scale));
-            border-radius: 12px;
-            width: 90%;
-            max-width: calc(400px * var(--app-scale));
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-        
-        .notice-title {
-            font-size: calc(1.2rem * var(--app-scale));
-            font-weight: bold;
-            color: #E53935;
-            margin-bottom: calc(1rem * var(--app-scale));
-        }
-        
-        .notice-content {
-            font-size: calc(1rem * var(--app-scale));
-            margin-bottom: calc(1.5rem * var(--app-scale));
-            line-height: 1.6;
-        }
-        
-        .notice-button {
-            background-color: #5D5CDE;
-            color: white;
-            padding: calc(0.6rem * var(--app-scale)) calc(1.2rem * var(--app-scale));
-            border-radius: 8px;
-            border: none;
-            font-size: calc(1rem * var(--app-scale));
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .notice-button:hover {
-            background-color: #4A49B7;
-        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center bg-white text-gray-800">
-    <!-- 提示消息 -->
-    <div id="notice-overlay" class="notice-overlay" style="display: none;">
-        <div class="notice-container">
-            <div class="notice-title">⚠️ 重要說明</div>
-            <div class="notice-content">
-                由於技術限制，此網頁無法保存占卜和簽到狀態。<br><br>
-                <b>每次重新整理頁面後，占卜及簽到次數將重置。</b><br><br>
-                建議將本網頁加入收藏，避免重整頁面。
-            </div>
-            <button id="notice-button" class="notice-button">我已了解</button>
-        </div>
-    </div>
-
     <div class="app-container w-full flex flex-col items-center justify-between">
         <!-- 信件箱 - 改名為信件 -->
         <div id="mailbox" class="mailbox button-common">
@@ -766,7 +700,6 @@
 
         <footer class="app-footer w-full max-w-xl text-center text-gray-500">
             <p>輕觸圖片，獲得今日的特別鼓勵吧！</p>
-            <p class="mt-1 text-xs text-red-500">注意: 重新整理頁面會重置占卜及簽到狀態</p>
         </footer>
     </div>
     
@@ -827,28 +760,119 @@
     </script>
 
     <script>
-        // 是否已顯示過提示
-        let firstVisitShown = false;
+        // 创建一个存储抽象层，自动选择最佳存储方式
+        class Storage {
+            constructor() {
+                // 检测是否支持localStorage
+                this.useLocalStorage = this.isLocalStorageAvailable();
+                console.log(`使用存储方式: ${this.useLocalStorage ? 'localStorage' : '内存存储'}`);
+                
+                // 如果不支持localStorage，创建内存存储
+                if (!this.useLocalStorage) {
+                    this.memoryStorage = {};
+                }
+            }
+            
+            // 检测localStorage是否可用
+            isLocalStorageAvailable() {
+                try {
+                    const test = "__storage_test__";
+                    localStorage.setItem(test, test);
+                    localStorage.removeItem(test);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            // 获取数据
+            get(key, defaultValue = null) {
+                if (this.useLocalStorage) {
+                    const item = localStorage.getItem(key);
+                    if (item === null) return defaultValue;
+                    try {
+                        return JSON.parse(item);
+                    } catch (e) {
+                        return item;
+                    }
+                } else {
+                    return this.memoryStorage[key] !== undefined ? this.memoryStorage[key] : defaultValue;
+                }
+            }
+            
+            // 设置数据
+            set(key, value) {
+                if (this.useLocalStorage) {
+                    try {
+                        if (typeof value === 'object') {
+                            localStorage.setItem(key, JSON.stringify(value));
+                        } else {
+                            localStorage.setItem(key, value);
+                        }
+                        return true;
+                    } catch (e) {
+                        console.error('存储失败:', e);
+                        return false;
+                    }
+                } else {
+                    this.memoryStorage[key] = value;
+                    return true;
+                }
+            }
+            
+            // 删除数据
+            remove(key) {
+                if (this.useLocalStorage) {
+                    try {
+                        localStorage.removeItem(key);
+                        return true;
+                    } catch (e) {
+                        console.error('删除失败:', e);
+                        return false;
+                    }
+                } else {
+                    if (this.memoryStorage[key] !== undefined) {
+                        delete this.memoryStorage[key];
+                        return true;
+                    }
+                    return false;
+                }
+            }
+        }
+        
+        // 创建存储实例
+        const storage = new Storage();
         
         // 簽到計數器 - 管理累計占卜次數
         const CHECKIN_COUNTER_KEY = 'catFortuneCheckinCount';
         const LAST_CHECKIN_DATE_KEY = 'catFortuneLastCheckinDate';
         
-        // 創建内存變量存儲簽到數據
-        let checkinCount = 0;
-        let lastCheckinTime = null; // 上次签到时间
-        let checkedInToday = false; // 今天是否已签到
-        
-        // 加載並顯示累計簽到次數 - 使用内存變量
+        // 加載並顯示累計簽到次數
         function loadCheckinCount() {
-            // 更新UI顯示
-            document.getElementById('checkin-count').textContent = checkinCount;
-            return checkinCount;
+            const count = storage.get(CHECKIN_COUNTER_KEY, 0);
+            document.getElementById('checkin-count').textContent = count;
+            return count;
         }
         
         // 檢查今天是否已經簽到過
         function hasCheckedInToday() {
-            return checkedInToday;
+            const lastCheckinTime = storage.get(LAST_CHECKIN_DATE_KEY);
+            if (!lastCheckinTime) return false;
+            
+            const lastDate = new Date(parseInt(lastCheckinTime));
+            const now = new Date();
+            
+            // 获取今天7点的时间
+            const todayReset = new Date(now);
+            todayReset.setHours(7, 0, 0, 0);
+            
+            // 如果最后签到时间在今天7点之后，表示今天已签到
+            // 或者最后签到时间在今天，但当前时间还没到7点
+            return (now >= todayReset && lastDate >= todayReset) || 
+                  (now < todayReset && 
+                   lastDate.getDate() === now.getDate() && 
+                   lastDate.getMonth() === now.getMonth() && 
+                   lastDate.getFullYear() === now.getFullYear());
         }
         
         // 获取下次可签到时间（早上7点）
@@ -890,10 +914,11 @@
         
         // 检查是否可以重置签到状态
         function checkAndResetCheckinState() {
+            const lastCheckinTime = storage.get(LAST_CHECKIN_DATE_KEY);
             if (!lastCheckinTime) return;
             
             const now = new Date();
-            const lastDate = new Date(lastCheckinTime);
+            const lastDate = new Date(parseInt(lastCheckinTime));
             
             // 获取今天7点的时间
             const todayReset = new Date(now);
@@ -901,7 +926,6 @@
             
             // 如果现在已经过了今天7点，且上次签到是在今天7点之前
             if (now >= todayReset && lastDate < todayReset) {
-                checkedInToday = false;
                 updateCheckinButtonState();
             }
         }
@@ -914,13 +938,19 @@
             // 如果今天已經簽到，不允許再次簽到
             if (hasCheckedInToday()) {
                 showAlreadyCheckedInMessage();
-                return checkinCount;
+                return;
             }
             
-            // 记录签到信息
-            checkedInToday = true;
-            lastCheckinTime = new Date().getTime();
+            // 獲取當前簽到次數
+            let checkinCount = storage.get(CHECKIN_COUNTER_KEY, 0);
+            
+            // 記錄簽到信息
+            const now = new Date().getTime();
+            storage.set(LAST_CHECKIN_DATE_KEY, now);
+            
+            // 增加簽到計數
             checkinCount += 1;
+            storage.set(CHECKIN_COUNTER_KEY, checkinCount);
             
             // 使用更明顯的動畫效果
             const countElement = document.getElementById('checkin-count');
@@ -981,8 +1011,6 @@
             }, 2000);
             
             console.log('簽到成功！目前累計：', checkinCount);
-            
-            return checkinCount;
         }
         
         // 显示已经签到过的提示
@@ -1024,7 +1052,6 @@
                 
                 // 如果已到重置时间，重置签到状态
                 if (timeToNextCheckin <= 0) {
-                    checkedInToday = false;
                     updateCheckinButtonState();
                 }
             }
@@ -1141,11 +1168,6 @@
             "喵喵喵？喵！"
         ];
 
-        // 圖片和圖片URL設定
-        const INITIAL_IMAGE = "https://i.imgur.com/RdfIav1.png";
-        const CLICKED_IMAGE = "https://i.imgur.com/Ff7QTIv.png";
-        const FINAL_IMAGE = "https://i.imgur.com/dgyoDVN.jpeg";
-        
         // 儲存鍵名
         const FORTUNE_STORAGE_KEY = 'dailyFortuneData';
         
@@ -1154,9 +1176,6 @@
         let clickCount = 0;
         const requiredClicks = 5;
         let canPredict = true; // 是否可以進行占卜
-        let lastPrediction = null; // 最後一次占卜的結果
-        let lastPredictionTime = null; // 最後一次占卜的時間
-        let todayPredicted = false; // 今天是否已經占卜
         
         // 獲取當前時間到下一個早上7點的毫秒數
         function getTimeToNextReset() {
@@ -1191,8 +1210,11 @@
             const countdownContainer = document.getElementById('countdown-container');
             const countdownTimer = document.getElementById('countdown-timer');
             
-            // 如果没有上次的占卜時間，隱藏倒計時
-            if (!lastPredictionTime) {
+            // 获取占卜数据
+            const fortuneData = storage.get(FORTUNE_STORAGE_KEY);
+            
+            // 如果没有占卜数据，隐藏倒计时
+            if (!fortuneData) {
                 countdownContainer.classList.add('hidden');
                 return;
             }
@@ -1200,13 +1222,13 @@
             const timeToNextReset = getTimeToNextReset();
             countdownTimer.textContent = formatCountdown(timeToNextReset);
             
-            // 如果倒計時結束，恢復占卜功能
+            // 如果倒计时结束，恢复占卜功能
             if (timeToNextReset <= 0) {
                 resetFortuneState();
             }
         }
         
-        // 获取圖片元素
+        // 获取图片元素
         const initialImage = document.getElementById('initial-image');
         const clickedImage = document.getElementById('clicked-image');
         const finalImage = document.getElementById('final-image');
@@ -1216,12 +1238,9 @@
         const clickProgress = document.getElementById('click-progress');
         const countdownContainer = document.getElementById('countdown-container');
         
-        // 重置占卜狀態
+        // 重置占卜状态
         function resetFortuneState() {
             canPredict = true;
-            lastPrediction = null;
-            lastPredictionTime = null;
-            todayPredicted = false; // 重置今天是否已占卜标记
             clickCount = 0;
             
             // 重置UI
@@ -1231,113 +1250,124 @@
             clickProgress.textContent = `再按 ${requiredClicks} 次`;
             clickProgress.classList.add('show');
             
-            // 清除本地儲存
-            try {
-                localStorage.removeItem(FORTUNE_STORAGE_KEY);
-            } catch (e) {
-                // 忽略錯誤
-            }
+            // 删除存储的占卜结果
+            storage.remove(FORTUNE_STORAGE_KEY);
         }
         
-        // 保存占卜結果到本地儲存
+        // 保存占卜结果
         function saveFortuneState(prediction) {
             const now = new Date();
-            lastPrediction = prediction;
-            lastPredictionTime = now.getTime();
             
-            try {
-                // 使用 sessionStorage 代替 localStorage，这样在页面刷新后仍可用，但在浏览器关闭后会清除
-                sessionStorage.setItem(FORTUNE_STORAGE_KEY, JSON.stringify({
-                    prediction: lastPrediction,
-                    time: lastPredictionTime
-                }));
-                
-                // 尝试使用localStorage作为备份
-                try {
-                    localStorage.setItem(FORTUNE_STORAGE_KEY, JSON.stringify({
-                        prediction: lastPrediction,
-                        time: lastPredictionTime
-                    }));
-                } catch (storageErr) {
-                    console.log('localStorage保存失败，但已保存到sessionStorage:', storageErr);
-                }
-                
-                // 確保在存儲占卜結果後再增加簽到次數，但僅在今日未簽到的情況下
-                setTimeout(() => {
-                    // 檢查每日簽到上限
-                    if (!hasCheckedInToday()) {
-                        // 增加簽到次數
-                        incrementCheckinCount();
-                        
-                        // 保存今天已簽到的紀錄
-                        try {
-                            localStorage.setItem(LAST_CHECKIN_DATE_KEY, now.getTime().toString());
-                        } catch (e) {
-                            sessionStorage.setItem(LAST_CHECKIN_DATE_KEY, now.getTime().toString());
-                        }
-                    }
-                }, 100);
-            } catch (e) {
-                console.log('保存占卜結果失敗:', e);
-            }
+            // 存储占卜结果和时间
+            storage.set(FORTUNE_STORAGE_KEY, {
+                prediction: prediction,
+                time: now.getTime()
+            });
             
             // 更新UI
             canPredict = false;
-            fortuneText.textContent = lastPrediction;
+            fortuneText.textContent = prediction;
             fortuneBox.classList.add('show');
             countdownContainer.classList.remove('hidden');
             clickProgress.classList.remove('show');
         }
         
-        // 創建内存變量存儲狀態 - 不使用localStorage
-        let memoryStorage = {};
-        
-        // 載入占卜狀態 - 使用内存变量而非localStorage
+        // 載入占卜狀態
         function loadFortuneState() {
             try {
-                let savedData = memoryStorage[FORTUNE_STORAGE_KEY];
+                // 尝试获取存储的占卜数据
+                const fortuneData = storage.get(FORTUNE_STORAGE_KEY);
                 
-                if (savedData) {
-                    const { prediction, time } = savedData;
+                if (fortuneData) {
+                    const { prediction, time } = fortuneData;
                     const savedTime = new Date(time);
                     const now = new Date();
                     
-                    // 檢查是否是同一個"重置周期"
-                    // 計算最後一次占卜時間到當前的最近一個7點是否已經過去
+                    // 计算重置时间
                     let resetTime = new Date(savedTime);
-                    // 如果占卜時間是在7點之前，那麼重置時間是當天早上7點
+                    
+                    // 如果占卜时间是在7点之前，重置时间是当天早上7点
                     if (savedTime.getHours() < 7) {
                         resetTime.setHours(7, 0, 0, 0);
                     } 
-                    // 否則重置時間是隔天早上7點
+                    // 否则重置时间是下一天早上7点
                     else {
                         resetTime.setDate(resetTime.getDate() + 1);
                         resetTime.setHours(7, 0, 0, 0);
                     }
                     
-                    // 如果現在時間還沒到重置時間，恢復上次占卜狀態
+                    // 如果现在时间还没到重置时间，恢复上次占卜状态
                     if (now < resetTime) {
-                        lastPrediction = prediction;
-                        lastPredictionTime = time;
-                        todayPredicted = true; // 标记今天已经占卜过
                         canPredict = false;
                         
                         // 更新UI
                         showImage(finalImage);
-                        fortuneText.textContent = lastPrediction;
+                        fortuneText.textContent = prediction;
                         fortuneBox.classList.add('show');
                         countdownContainer.classList.remove('hidden');
                         clickProgress.classList.remove('show');
                     } else {
-                        // 已過重置時間，重置狀態
+                        // 已过重置时间，重置状态
                         resetFortuneState();
                     }
                 }
             } catch (e) {
-                console.error('載入占卜狀態失敗:', e);
-                // 出錯時重置
+                console.error('载入占卜状态失败:', e);
+                // 出错时重置
                 resetFortuneState();
             }
+        }
+        
+        // 檢查今天是否已占卜
+        function hasPredictedToday() {
+            const fortuneData = storage.get(FORTUNE_STORAGE_KEY);
+            if (!fortuneData) return false;
+            
+            const lastPredictTime = new Date(fortuneData.time);
+            const now = new Date();
+            
+            // 获取今天7点的时间
+            const todayReset = new Date(now);
+            todayReset.setHours(7, 0, 0, 0);
+            
+            // 如果最后占卜时间在今天7点之后，表示今天已占卜
+            // 或者最后占卜时间在今天，但当前时间还没到7点
+            return (now >= todayReset && lastPredictTime >= todayReset) || 
+                  (now < todayReset && 
+                   lastPredictTime.getDate() === now.getDate() && 
+                   lastPredictTime.getMonth() === now.getMonth() && 
+                   lastPredictTime.getFullYear() === now.getFullYear());
+        }
+        
+        // 顯示已經占卜過的提示
+        function showAlreadyPredictedMessage() {
+            const container = document.getElementById('image-container');
+            const alreadyPredictedText = document.createElement('div');
+            alreadyPredictedText.textContent = '今日已占卜過！明天7點後再來吧！';
+            alreadyPredictedText.style.position = 'absolute';
+            alreadyPredictedText.style.bottom = '-80px';
+            alreadyPredictedText.style.left = '0';
+            alreadyPredictedText.style.right = '0';
+            alreadyPredictedText.style.textAlign = 'center';
+            alreadyPredictedText.style.color = '#F44336';
+            alreadyPredictedText.style.fontWeight = 'bold';
+            alreadyPredictedText.style.fontSize = `${1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'))}rem`;
+            alreadyPredictedText.style.opacity = '0';
+            alreadyPredictedText.style.transition = 'opacity 0.3s ease-in-out';
+            alreadyPredictedText.style.zIndex = '100';
+            
+            container.appendChild(alreadyPredictedText);
+            
+            setTimeout(() => {
+                alreadyPredictedText.style.opacity = '1';
+            }, 100);
+            
+            setTimeout(() => {
+                alreadyPredictedText.style.opacity = '0';
+                setTimeout(() => {
+                    alreadyPredictedText.remove();
+                }, 500);
+            }, 3000);
         }
         
         // 預加載圖片以確保平滑過渡
@@ -1374,7 +1404,6 @@
             const mailListView = document.getElementById('mail-list-view');
             const mailDetailView = document.getElementById('mail-detail-view');
             const backToListBtn = document.getElementById('back-to-list');
-            const mailDetailTitle = document.getElementById('mail-detail-title');
             const mailDetailContent = document.getElementById('mail-detail-content');
             const mailContentsContainer = document.getElementById('mail-contents');
             
@@ -1450,33 +1479,8 @@
             });
         }
         
-        // 显示警告消息
-        function showNoticeModal() {
-            const noticeOverlay = document.getElementById('notice-overlay');
-            const noticeButton = document.getElementById('notice-button');
-            
-            noticeOverlay.style.display = 'flex';
-            
-            noticeButton.addEventListener('click', () => {
-                noticeOverlay.style.display = 'none';
-                firstVisitShown = true;
-            });
-        }
-        
-        // 添加刷新前提醒
-        window.addEventListener('beforeunload', function(e) {
-            const message = '重整頁面將重置占卜和簽到狀態。確定要離開嗎？';
-            e.returnValue = message;
-            return message;
-        });
-        
         // 初始化
         function init() {
-            // 顯示首次訪問提示
-            if (!firstVisitShown) {
-                showNoticeModal();
-            }
-
             // 載入保存的狀態
             loadFortuneState();
             
@@ -1513,42 +1517,6 @@
         
         // 頁面載入時初始化
         document.addEventListener('DOMContentLoaded', init);
-        
-        // 顯示已經占卜過的提示
-        function showAlreadyPredictedMessage() {
-            const container = document.getElementById('image-container');
-            const alreadyPredictedText = document.createElement('div');
-            alreadyPredictedText.textContent = '今日已占卜過！明天7點後再來吧！';
-            alreadyPredictedText.style.position = 'absolute';
-            alreadyPredictedText.style.bottom = '-80px';
-            alreadyPredictedText.style.left = '0';
-            alreadyPredictedText.style.right = '0';
-            alreadyPredictedText.style.textAlign = 'center';
-            alreadyPredictedText.style.color = '#F44336';
-            alreadyPredictedText.style.fontWeight = 'bold';
-            alreadyPredictedText.style.fontSize = `${1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'))}rem`;
-            alreadyPredictedText.style.opacity = '0';
-            alreadyPredictedText.style.transition = 'opacity 0.3s ease-in-out';
-            alreadyPredictedText.style.zIndex = '100';
-            
-            container.appendChild(alreadyPredictedText);
-            
-            setTimeout(() => {
-                alreadyPredictedText.style.opacity = '1';
-            }, 100);
-            
-            setTimeout(() => {
-                alreadyPredictedText.style.opacity = '0';
-                setTimeout(() => {
-                    alreadyPredictedText.remove();
-                }, 500);
-            }, 3000);
-        }
-        
-        // 檢查是否今天已占卜
-        function hasPredictedToday() {
-            return todayPredicted;
-        }
         
         // 圖片點擊事件
         document.getElementById('image-container').addEventListener('click', async function() {
@@ -1616,23 +1584,12 @@
             // 隱藏加載動畫
             loading.style.display = 'none';
             
-            // 標記今天已經占卜過
-            todayPredicted = true;
-            
             // 保存並顯示占卜結果
             saveFortuneState(selectedEncouragement);
-            
-            // 将占卜结果保存到内存变量
-            memoryStorage[FORTUNE_STORAGE_KEY] = {
-                prediction: selectedEncouragement,
-                time: new Date().getTime()
-            };
             
             // 設置動畫結束
             isAnimating = false;
         });
     </script>
-
-
 </body>
 </html>
