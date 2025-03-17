@@ -448,10 +448,7 @@
             animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
         }
         
-        .image-container:hover {
-            transform: scale(1.03);
-        }
-        
+        /* 移除hover放大效果 */
         .image-container:active {
             transform: scale(0.98);
         }
@@ -737,110 +734,88 @@
         const CHECKIN_COUNTER_KEY = 'catFortuneCheckinCount';
         const LAST_CHECKIN_DATE_KEY = 'catFortuneLastCheckinDate';
         
-        // 加載並顯示累計簽到次數
+        // 創建内存變量存儲簽到數據
+        let checkinCount = 0;
+        
+        // 加載並顯示累計簽到次數 - 使用内存變量
         function loadCheckinCount() {
-            let count = 0;
-            try {
-                const savedCount = localStorage.getItem(CHECKIN_COUNTER_KEY);
-                if (savedCount) {
-                    count = parseInt(savedCount, 10);
-                }
-            } catch (e) {
-                // 忽略錯誤
-                console.log('無法讀取簽到計數:', e);
-            }
-            
+            // 直接使用内存中的計數
             // 更新UI顯示
-            document.getElementById('checkin-count').textContent = count;
-            return count;
+            document.getElementById('checkin-count').textContent = checkinCount;
+            return checkinCount;
         }
         
-        // 檢查今天是否已經簽到過
+        // 檢查今天是否已經簽到過 - 始終返回false
         function hasCheckedInToday() {
-            try {
-                const lastCheckinDate = localStorage.getItem(LAST_CHECKIN_DATE_KEY);
-                if (!lastCheckinDate) return false;
-                
-                const today = new Date();
-                const lastDate = new Date(parseInt(lastCheckinDate, 10));
-                
-                // 檢查是否為同一天
-                return today.toDateString() === lastDate.toDateString();
-            } catch (e) {
-                console.log('檢查今日簽到狀態失敗:', e);
-                return false;
-            }
+            // 簡化為始終可以簽到
+            return false;
         }
         
         // 增加簽到計數並保存 - 加強動畫效果
         function incrementCheckinCount() {
-            let count = loadCheckinCount();
-            count += 1;
+            // 直接增加内存中的計數
+            checkinCount += 1;
             
-            try {
-                localStorage.setItem(CHECKIN_COUNTER_KEY, count.toString());
-                
-                // 使用更明顯的動畫效果
-                const countElement = document.getElementById('checkin-count');
-                const counter = document.getElementById('checkin-counter');
-                
-                // 先移除之前的任何動畫類
+            // 使用更明顯的動畫效果
+            const countElement = document.getElementById('checkin-count');
+            const counter = document.getElementById('checkin-counter');
+            
+            // 先移除之前的任何動畫類
+            countElement.classList.remove('counter-animation');
+            counter.classList.remove('checkin-success');
+            counter.classList.remove('animate-pulse');
+            
+            // 觸發重排以確保動畫效果重新應用
+            void counter.offsetWidth;
+            
+            // 更新UI顯示
+            countElement.textContent = checkinCount;
+            
+            // 添加更多動畫類
+            countElement.classList.add('counter-animation');
+            counter.classList.add('checkin-success');
+            
+            // 添加簽到成功文本提示
+            const successText = document.createElement('div');
+            successText.textContent = '簽到成功！';
+            successText.style.position = 'absolute';
+            successText.style.top = '-30px';
+            successText.style.left = '0';
+            successText.style.right = '0';
+            successText.style.textAlign = 'center';
+            successText.style.color = '#FF6B6B';
+            successText.style.fontWeight = 'bold';
+            successText.style.fontSize = `${1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'))}rem`;
+            successText.style.opacity = '0';
+            successText.style.transition = 'opacity 0.3s ease-in-out, transform 0.8s ease-out';
+            successText.style.transform = 'translateY(0)';
+            
+            counter.appendChild(successText);
+            
+            // 顯示文本提示並動畫
+            setTimeout(() => {
+                successText.style.opacity = '1';
+            }, 100);
+            
+            setTimeout(() => {
+                successText.style.transform = 'translateY(-20px)';
+            }, 200);
+            
+            // 動畫結束後移除類和提示
+            setTimeout(() => {
                 countElement.classList.remove('counter-animation');
                 counter.classList.remove('checkin-success');
-                counter.classList.remove('animate-pulse');
-                
-                // 觸發重排以確保動畫效果重新應用
-                void counter.offsetWidth;
-                
-                // 更新UI顯示
-                countElement.textContent = count;
-                
-                // 添加更多動畫類
-                countElement.classList.add('counter-animation');
-                counter.classList.add('checkin-success');
-                
-                // 添加簽到成功文本提示
-                const successText = document.createElement('div');
-                successText.textContent = '簽到成功！';
-                successText.style.position = 'absolute';
-                successText.style.top = '-30px';
-                successText.style.left = '0';
-                successText.style.right = '0';
-                successText.style.textAlign = 'center';
-                successText.style.color = '#FF6B6B';
-                successText.style.fontWeight = 'bold';
-                successText.style.fontSize = `${1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'))}rem`;
                 successText.style.opacity = '0';
-                successText.style.transition = 'opacity 0.3s ease-in-out, transform 0.8s ease-out';
-                successText.style.transform = 'translateY(0)';
-                
-                counter.appendChild(successText);
-                
-                // 顯示文本提示並動畫
-                setTimeout(() => {
-                    successText.style.opacity = '1';
-                }, 100);
                 
                 setTimeout(() => {
-                    successText.style.transform = 'translateY(-20px)';
-                }, 200);
-                
-                // 動畫結束後移除類和提示
-                setTimeout(() => {
-                    countElement.classList.remove('counter-animation');
-                    counter.classList.remove('checkin-success');
-                    successText.style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        successText.remove();
-                    }, 500);
-                }, 2000);
-            } catch (e) {
-                // 忽略錯誤
-                console.log('無法保存簽到計數:', e);
-            }
+                    successText.remove();
+                }, 500);
+            }, 2000);
             
-            return count;
+            // 記錄
+            console.log('簽到成功！目前累計：', checkinCount);
+            
+            return checkinCount;
         }
         
         // 計算從2024年2月15日到今天的天數
@@ -1100,19 +1075,16 @@
             clickProgress.classList.remove('show');
         }
         
-        // 載入占卜狀態
+        // 創建内存變量存儲狀態 - 不使用localStorage
+        let memoryStorage = {};
+        
+        // 載入占卜狀態 - 使用内存变量而非localStorage
         function loadFortuneState() {
             try {
-                // 先尝试从localStorage获取
-                let savedData = localStorage.getItem(FORTUNE_STORAGE_KEY);
-                
-                // 如果localStorage没有数据，尝试从sessionStorage获取
-                if (!savedData) {
-                    savedData = sessionStorage.getItem(FORTUNE_STORAGE_KEY);
-                }
+                let savedData = memoryStorage[FORTUNE_STORAGE_KEY];
                 
                 if (savedData) {
-                    const { prediction, time } = JSON.parse(savedData);
+                    const { prediction, time } = savedData;
                     const savedTime = new Date(time);
                     const now = new Date();
                     
