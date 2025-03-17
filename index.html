@@ -1018,14 +1018,6 @@
             "你的每次蹭蹭，都是別人溫暖的禮物。",
             "每一次的跳躍，都更靠近星星。",
             "我喵故我在。",
-            "如果煎八爪魚腳腳，就會傳出香味。",
-            "在泥巴裡打滾的除了豬豬，還有近豬者豬的貓貓。",
-            "沒有什麼是不可能的，除了一天不吃罐罐。",
-            "貓貓不跑步也許是好的。跑太快就變豹豹了。",
-            "身為一隻優秀的貓貓應該要懂得攀岩。誒貓貓有興趣一起去玩嗎？",
-            "貓貓跟士多啤梨的共同點就是……都是我愛的！",
-            "閉眼十秒再睜眼，會有好運氣哦。",
-            "好想和貓貓去旅行:3:3:3",
             "路上的貓不都是迷路了，有些只是自由地散步。",
             "世界上最讓貓舒服的事，就是曬太陽與被愛。",
             "一隻喵的價值，不在於牠抓了多少老鼠，而在於牠如何享受生活。",
@@ -1092,6 +1084,7 @@
         let canPredict = true; // 是否可以進行占卜
         let lastPrediction = null; // 最後一次占卜的結果
         let lastPredictionTime = null; // 最後一次占卜的時間
+        let todayPredicted = false; // 今天是否已經占卜
         
         // 獲取當前時間到下一個早上7點的毫秒數
         function getTimeToNextReset() {
@@ -1253,6 +1246,7 @@
                     if (now < resetTime) {
                         lastPrediction = prediction;
                         lastPredictionTime = time;
+                        todayPredicted = true; // 标记今天已经占卜过
                         canPredict = false;
                         
                         // 更新UI
@@ -1422,8 +1416,50 @@
         // 頁面載入時初始化
         init();
         
+        // 顯示已經占卜過的提示
+        function showAlreadyPredictedMessage() {
+            const container = document.getElementById('image-container');
+            const alreadyPredictedText = document.createElement('div');
+            alreadyPredictedText.textContent = '今日已占卜過！明天7點後再來吧！';
+            alreadyPredictedText.style.position = 'absolute';
+            alreadyPredictedText.style.bottom = '-80px';
+            alreadyPredictedText.style.left = '0';
+            alreadyPredictedText.style.right = '0';
+            alreadyPredictedText.style.textAlign = 'center';
+            alreadyPredictedText.style.color = '#F44336';
+            alreadyPredictedText.style.fontWeight = 'bold';
+            alreadyPredictedText.style.fontSize = `${1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'))}rem`;
+            alreadyPredictedText.style.opacity = '0';
+            alreadyPredictedText.style.transition = 'opacity 0.3s ease-in-out';
+            alreadyPredictedText.style.zIndex = '100';
+            
+            container.appendChild(alreadyPredictedText);
+            
+            setTimeout(() => {
+                alreadyPredictedText.style.opacity = '1';
+            }, 100);
+            
+            setTimeout(() => {
+                alreadyPredictedText.style.opacity = '0';
+                setTimeout(() => {
+                    alreadyPredictedText.remove();
+                }, 500);
+            }, 3000);
+        }
+        
+        // 檢查是否今天已占卜
+        function hasPredictedToday() {
+            return todayPredicted;
+        }
+        
         // 圖片點擊事件
         document.getElementById('image-container').addEventListener('click', async function() {
+            // 檢查今天是否已經占卜過
+            if (hasPredictedToday()) {
+                showAlreadyPredictedMessage();
+                return;
+            }
+            
             // 如果不能占卜或动畫正在進行，返回
             if (!canPredict || isAnimating) return;
             
@@ -1482,8 +1518,17 @@
             // 隱藏加載動畫
             loading.style.display = 'none';
             
+            // 標記今天已經占卜過
+            todayPredicted = true;
+            
             // 保存並顯示占卜結果
             saveFortuneState(selectedEncouragement);
+            
+            // 将占卜结果保存到内存变量
+            memoryStorage[FORTUNE_STORAGE_KEY] = {
+                prediction: selectedEncouragement,
+                time: new Date().getTime()
+            };
             
             // 設置動畫結束
             isAnimating = false;
@@ -1492,3 +1537,4 @@
 
 
 </body></html>
+
