@@ -160,7 +160,7 @@
             margin-right: calc(0.5rem * var(--app-scale));
         }
         
-        /* 信件列表和內容區域 */
+        /* 郵箱列表和內容區域 */
         .mail-view, .mail-detail-view {
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
@@ -223,7 +223,7 @@
             white-space: pre-line;
         }
         
-        /* 信件詳細頁面的標題 */
+        /* 郵箱詳細頁面的標題 */
         .mail-detail-title {
             font-size: calc(1.25rem * var(--app-scale));
             font-weight: bold;
@@ -307,7 +307,7 @@
             font-display: swap;
         }
         
-        /* 共享按钮样式 - 为信件和签到框设置共同的样式 */
+        /* 共享按钮样式 - 为郵箱和签到框设置共同的样式 */
         .button-common {
             position: absolute;
             left: calc(1rem * var(--app-scale));
@@ -324,7 +324,7 @@
             font-weight: 500;
         }
         
-        /* 信件箱樣式 */
+        /* 郵箱箱樣式 */
         .mailbox {
             top: calc(5rem * var(--app-scale)); /* 再提高3rem位置到5rem */
             background-color: #E3F2FD; /* 淺藍色底色 */
@@ -345,7 +345,7 @@
             font-size: calc(1.2rem * var(--app-scale));
         }
         
-        /* 簽到計數器樣式 - 與信件框保持一致寬度 */
+        /* 簽到計數器樣式 - 與郵箱框保持一致寬度 */
         .checkin-counter {
             top: calc(9rem * var(--app-scale)); /* 再提高3rem位置到9rem，保持4rem间距 */
             background-color: #FFF8E1; /* 淺黃色底色 */
@@ -353,6 +353,29 @@
             transition: all 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); /* 更流暢的動畫 */
             border: 2px solid #FFE082;
             cursor: pointer; /* 可点击状态 */
+        }
+        
+        /* 已簽到樣式 */
+        .checkin-counter.checked {
+            background-color: #E0E0E0; /* 淺灰色背景 */
+            color: #757575; /* 灰色文字 */
+            border: 2px solid #BDBDBD;
+            cursor: not-allowed; /* 不可點擊狀態 */
+        }
+        
+        /* 簽到倒計時提示 */
+        .checkin-timer {
+            position: absolute;
+            top: calc(13rem * var(--app-scale)); /* 位置在簽到按鈕下方 */
+            left: calc(1rem * var(--app-scale));
+            font-size: calc(0.8rem * var(--app-scale));
+            color: #757575;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .checkin-timer.show {
+            opacity: 1;
         }
         
         .checkin-icon {
@@ -575,19 +598,24 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center bg-white text-gray-800">
     <div class="app-container w-full flex flex-col items-center justify-between">
-        <!-- 信件箱 - 改名為信件 -->
+        <!-- 信件箱 - 改名為郵箱 -->
         <div id="mailbox" class="mailbox button-common">
             <span class="mailbox-icon">❤️</span>
-            信件
+            郵箱
         </div>
         
-        <!-- 簽到計數器 - 移除cursor-pointer類 -->
+        <!-- 簽到計數器 -->
         <div id="checkin-counter" class="checkin-counter button-common">
             <span class="checkin-icon">🐾</span>
             <span id="checkin-count">0</span> 次簽到
         </div>
         
-        <!-- 信件模態窗口 -->
+        <!-- 簽到倒計時提示 -->
+        <div id="checkin-timer" class="checkin-timer">
+            下次簽到: <span id="next-checkin-time">00:00:00</span>
+        </div>
+        
+        <!-- 郵箱模態窗口 -->
         <div id="mail-modal" class="modal-overlay">
             <div class="modal-container">
                 <div class="modal-header">
@@ -595,7 +623,7 @@
                     <button class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <!-- 信件列表視圖 -->
+                    <!-- 郵箱列表視圖 -->
                     <div id="mail-list-view" class="mail-view">
                         <ul class="mail-list">
                             <li class="mail-item" data-mail-id="mail-1">
@@ -605,7 +633,7 @@
                         </ul>
                     </div>
                     
-                    <!-- 信件內容視圖 - 移動返回按鈕到内容后，移除标题 -->
+                    <!-- 郵箱內容視圖 - 移動返回按鈕到内容后，移除标题 -->
                     <div id="mail-detail-view" class="mail-detail-view hidden">
                         <div id="mail-detail-content" class="mail-content"></div>
                         <button id="back-to-list" class="back-button">
@@ -616,7 +644,7 @@
             </div>
         </div>
         
-        <!-- 隱藏的信件內容 -->
+        <!-- 隱藏的郵箱內容 -->
         <div id="mail-contents" style="display: none;">
             <div id="mail-1" class="mail-content-data">
 親愛的貓貓：
@@ -736,24 +764,90 @@
         
         // 創建内存變量存儲簽到數據
         let checkinCount = 0;
+        let lastCheckinTime = null; // 上次签到时间
+        let checkedInToday = false; // 今天是否已签到
         
         // 加載並顯示累計簽到次數 - 使用内存變量
         function loadCheckinCount() {
-            // 直接使用内存中的計數
             // 更新UI顯示
             document.getElementById('checkin-count').textContent = checkinCount;
             return checkinCount;
         }
         
-        // 檢查今天是否已經簽到過 - 始終返回false
+        // 檢查今天是否已經簽到過
         function hasCheckedInToday() {
-            // 簡化為始終可以簽到
-            return false;
+            return checkedInToday;
         }
+        
+        // 获取下次可签到时间（早上7点）
+        function getNextCheckinTime() {
+            const now = new Date();
+            // 明天早上7點
+            const tomorrow = new Date(now);
+            tomorrow.setDate(now.getDate() + 1);
+            tomorrow.setHours(7, 0, 0, 0);
+            
+            // 如果現在時間還沒到今天早上7點，那麼重置時間是今天早上7點
+            if (now.getHours() < 7) {
+                tomorrow.setDate(now.getDate());
+            }
+            
+            return tomorrow.getTime() - now.getTime();
+        }
+        
+        // 更新簽到按鈕狀態
+        function updateCheckinButtonState() {
+            const checkinCounter = document.getElementById('checkin-counter');
+            const checkinTimer = document.getElementById('checkin-timer');
+            const nextCheckinTime = document.getElementById('next-checkin-time');
+            
+            if (hasCheckedInToday()) {
+                // 已簽到狀態
+                checkinCounter.classList.add('checked');
+                checkinTimer.classList.add('show');
+                
+                // 计算并显示下次可签到时间
+                const timeToNextCheckin = getNextCheckinTime();
+                nextCheckinTime.textContent = formatCountdown(timeToNextCheckin);
+            } else {
+                // 可簽到狀態
+                checkinCounter.classList.remove('checked');
+                checkinTimer.classList.remove('show');
+            }
+        }
+        
+        // 检查是否可以重置签到状态
+        function checkAndResetCheckinState() {
+            if (!lastCheckinTime) return;
+            
+            const now = new Date();
+            const lastDate = new Date(lastCheckinTime);
+            
+            // 获取今天7点的时间
+            const todayReset = new Date(now);
+            todayReset.setHours(7, 0, 0, 0);
+            
+            // 如果现在已经过了今天7点，且上次签到是在今天7点之前
+            if (now >= todayReset && lastDate < todayReset) {
+                checkedInToday = false;
+                updateCheckinButtonState();
+            }
+        }
+        
+        // 每分钟检查一次是否需要重置签到状态
+        setInterval(checkAndResetCheckinState, 60000);
         
         // 增加簽到計數並保存 - 加強動畫效果
         function incrementCheckinCount() {
-            // 直接增加内存中的計數
+            // 如果今天已經簽到，不允許再次簽到
+            if (hasCheckedInToday()) {
+                showAlreadyCheckedInMessage();
+                return checkinCount;
+            }
+            
+            // 记录签到信息
+            checkedInToday = true;
+            lastCheckinTime = new Date().getTime();
             checkinCount += 1;
             
             // 使用更明顯的動畫效果
@@ -809,13 +903,59 @@
                 
                 setTimeout(() => {
                     successText.remove();
+                    // 更新签到按钮状态
+                    updateCheckinButtonState();
                 }, 500);
             }, 2000);
             
-            // 記錄
             console.log('簽到成功！目前累計：', checkinCount);
             
             return checkinCount;
+        }
+        
+        // 显示已经签到过的提示
+        function showAlreadyCheckedInMessage() {
+            const counter = document.getElementById('checkin-counter');
+            const alreadyCheckinText = document.createElement('div');
+            alreadyCheckinText.textContent = '今日已簽到！';
+            alreadyCheckinText.style.position = 'absolute';
+            alreadyCheckinText.style.top = '-30px';
+            alreadyCheckinText.style.left = '0';
+            alreadyCheckinText.style.right = '0';
+            alreadyCheckinText.style.textAlign = 'center';
+            alreadyCheckinText.style.color = '#F44336';
+            alreadyCheckinText.style.fontWeight = 'bold';
+            alreadyCheckinText.style.fontSize = `${1 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-scale'))}rem`;
+            alreadyCheckinText.style.opacity = '0';
+            alreadyCheckinText.style.transition = 'opacity 0.3s ease-in-out';
+            
+            counter.appendChild(alreadyCheckinText);
+            
+            setTimeout(() => {
+                alreadyCheckinText.style.opacity = '1';
+            }, 100);
+            
+            setTimeout(() => {
+                alreadyCheckinText.style.opacity = '0';
+                setTimeout(() => {
+                    alreadyCheckinText.remove();
+                }, 500);
+            }, 2000);
+        }
+        
+        // 更新签到倒计时
+        function updateCheckinCountdown() {
+            if (hasCheckedInToday()) {
+                const nextCheckinTime = document.getElementById('next-checkin-time');
+                const timeToNextCheckin = getNextCheckinTime();
+                nextCheckinTime.textContent = formatCountdown(timeToNextCheckin);
+                
+                // 如果已到重置时间，重置签到状态
+                if (timeToNextCheckin <= 0) {
+                    checkedInToday = false;
+                    updateCheckinButtonState();
+                }
+            }
         }
         
         // 計算從2024年2月15日到今天的天數
@@ -878,6 +1018,14 @@
             "你的每次蹭蹭，都是別人溫暖的禮物。",
             "每一次的跳躍，都更靠近星星。",
             "我喵故我在。",
+            "如果煎八爪魚腳腳，就會傳出香味。",
+            "在泥巴裡打滾的除了豬豬，還有近豬者豬的貓貓。",
+            "沒有什麼是不可能的，除了一天不吃罐罐。",
+            "貓貓不跑步也許是好的。跑太快就變豹豹了。",
+            "身為一隻優秀的貓貓應該要懂得攀岩。誒貓貓有興趣一起去玩嗎？",
+            "貓貓跟士多啤梨的共同點就是……都是我愛的！",
+            "閉眼十秒再睜眼，會有好運氣哦。",
+            "好想和貓貓去旅行:3:3:3",
             "路上的貓不都是迷路了，有些只是自由地散步。",
             "世界上最讓貓舒服的事，就是曬太陽與被愛。",
             "一隻喵的價值，不在於牠抓了多少老鼠，而在於牠如何享受生活。",
@@ -1150,7 +1298,7 @@
             imageToShow.classList.add('image-active');
         }
         
-        // 初始化信件箱功能
+        // 初始化郵箱箱功能
         function initMailbox() {
             const mailbox = document.getElementById('mailbox');
             const mailModal = document.getElementById('mail-modal');
@@ -1163,7 +1311,7 @@
             const mailDetailContent = document.getElementById('mail-detail-content');
             const mailContentsContainer = document.getElementById('mail-contents');
             
-            // 打開信件箱 - 每次打開都顯示列表視圖
+            // 打開郵箱箱 - 每次打開都顯示列表視圖
             mailbox.addEventListener('click', () => {
                 // 重置視圖
                 mailListView.classList.remove('hidden');
@@ -1173,7 +1321,7 @@
                 mailModal.classList.add('active');
             });
             
-            // 關閉信件箱
+            // 關閉郵箱箱
             closeBtn.addEventListener('click', () => {
                 mailModal.classList.remove('active');
                 
@@ -1184,15 +1332,15 @@
                 }, 300);
             });
             
-            // 點擊信件列表項目
+            // 點擊郵箱列表項目
             mailItems.forEach(item => {
                 item.addEventListener('click', () => {
-                    // 獲取信件數據
+                    // 獲取郵箱數據
                     const mailId = item.getAttribute('data-mail-id');
                     const mailContentElement = mailContentsContainer.querySelector(`#${mailId}`);
                     const mailContent = mailContentElement ? mailContentElement.textContent : '無內容';
                     
-                    // 填充信件詳情視圖
+                    // 填充郵箱詳情視圖
                     mailDetailContent.textContent = mailContent;
                     
                     // 顯示詳情視圖，隱藏列表視圖
@@ -1243,6 +1391,9 @@
             // 載入打卡計數
             loadCheckinCount();
             
+            // 更新签到按钮状态
+            updateCheckinButtonState();
+            
             // 如果可以占卜，顯示點擊提示
             if (canPredict) {
                 clickProgress.textContent = `再按 ${requiredClicks} 次`;
@@ -1255,25 +1406,16 @@
             // 設置倒計時定時器
             setInterval(updateCountdown, 1000);
             
-            // 初始化信件箱功能
+            // 设置签到倒计时定时器
+            setInterval(updateCheckinCountdown, 1000);
+            
+            // 初始化郵箱箱功能
             initMailbox();
             
-            // 簡化版的簽到按鈕點擊事件
+            // 簽到按鈕點擊事件
             const checkinCounter = document.getElementById('checkin-counter');
             checkinCounter.addEventListener('click', function() {
-                // 直接增加簽到計數，不做日期檢查
-                // 這樣簡化可以確保功能始終可用
                 incrementCheckinCount();
-                
-                try {
-                    // 嘗試儲存簽到日期，但不影響主功能
-                    const now = new Date();
-                    localStorage.setItem(LAST_CHECKIN_DATE_KEY, now.getTime().toString());
-                } catch (e) {
-                    console.log('簽到日期保存失敗，但簽到計數已增加');
-                }
-                
-                console.log('簽到成功！');
             });
         }
         
